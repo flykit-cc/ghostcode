@@ -1,12 +1,12 @@
 import React from "react";
 import { Box, Text } from "ink";
-import { LOGO } from "../logo.ts";
+import { LOGO, FLYKIT_LOGO } from "../logo.ts";
+import pkg from "../../package.json" with { type: "json" };
 
-// Claude Code brand orange.
 const CC_ORANGE = "#d97757";
 
-// Kaio-provided CC mark. Kept verbatim — do not reflow the trailing spaces,
-// they keep the legs aligned under the body.
+// Kaio-provided CC mark — do NOT reflow trailing spaces, they keep the
+// legs aligned under the body.
 const CC_ART = [" ▐▛███▜▌   ", "▝▜█████▛▘  ", "  ▘▘ ▝▝    "];
 
 export function Header({ title, hint }: { title: string; hint: string }) {
@@ -18,32 +18,49 @@ export function Header({ title, hint }: { title: string; hint: string }) {
       marginBottom={1}
       flexDirection="column"
     >
-      {/* alignItems center keeps the 2-line GhostCode logo vertically
-          centered next to the 3-line CC mark — closest we can get without
-          a 3-line block font (tiny is the only 2-line one; everything else
-          jumps to 4+). */}
+      {/* Parent row: alignItems center so the 3-line left stack (logo + mascot)
+          centers vertically against the 4-line flykit logo on the right. */}
       <Box
         flexDirection="row"
         justifyContent="space-between"
         alignItems="center"
       >
-        <Text>{LOGO}</Text>
+        {/* Left: GHOSTCODE logo (2 lines) + 2-space gap + CC mascot (3 lines).
+            alignItems center here keeps the 2-line logo centered against the
+            3-line mascot — same trick the old Header used. */}
+        <Box flexDirection="row" alignItems="center">
+          <Text>{LOGO}</Text>
+          <Box marginLeft={2} flexDirection="column">
+            {CC_ART.map((line, i) => (
+              <Text key={i} color={CC_ORANGE}>
+                {line}
+              </Text>
+            ))}
+          </Box>
+        </Box>
+
+        {/* Right: flykit ASCII logo, 4 lines, plain white so it doesn't
+            compete with the purple gradient or orange mascot. */}
         <Box flexDirection="column" alignItems="flex-end">
-          {CC_ART.map((line, i) => (
-            <Text key={i} color={CC_ORANGE}>
+          {FLYKIT_LOGO.map((line, i) => (
+            <Text key={i} color="white">
               {line}
             </Text>
           ))}
         </Box>
       </Box>
+
       {title ? (
         <Box marginTop={1}>
           <Text bold>{title}</Text>
         </Box>
       ) : null}
       <Text dimColor>{hint}</Text>
+
       <Box justifyContent="flex-end" marginTop={1}>
-        <Text dimColor>flykit.cc by @kaiomp</Text>
+        <Text dimColor>
+          v{pkg.version} · by @kaiomp
+        </Text>
       </Box>
     </Box>
   );
