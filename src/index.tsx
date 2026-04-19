@@ -3,6 +3,12 @@ import { render } from "ink";
 import { App, type Outcome } from "./ui/App.tsx";
 import { runLaunch } from "./launch.ts";
 import { spawnSync } from "node:child_process";
+import pkg from "../package.json" with { type: "json" };
+
+if (process.argv.includes("--version") || process.argv.includes("-v")) {
+  console.log(pkg.version);
+  process.exit(0);
+}
 
 async function main() {
   const outcome = await new Promise<Outcome>((resolve) => {
