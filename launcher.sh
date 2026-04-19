@@ -34,7 +34,7 @@ fi
   ICON_PNG="$SCRIPT_DIR/assets/ghostcode-icon.png"
   ICON_HASH_FILE="$HOME/.config/ghostcode/.icon-hash"
   GHOSTTY_APP="/Applications/Ghostty.app"
-  ICON_SIDECAR="$GHOSTTY_APP/Icon\r"
+  ICON_SIDECAR="$GHOSTTY_APP/Icon"$'\r'
 
   [ -f "$ICON_PNG" ] || exit 0
   [ -d "$GHOSTTY_APP" ] || exit 0
