@@ -1,34 +1,34 @@
 #!/bin/zsh
 # GhostCode → Claude Code statusline bridge.
-#
 # Looks up the per-project tint color in ~/.config/ghostcode/state.json
-# and renders the project name with that tint as a pill, matching the
-# GhostCode UI. If no tint is set, falls back to plain text.
-#
-# Wire it up in ~/.claude/settings.json (the setup wizard does this for you):
-#   "statusLine": {
-#     "type": "command",
-#     "command": "<absolute path to>/ghostcode/scripts/statusline.sh"
-#   }
-#
-# Requires jq for JSON parsing (brew install jq). Silently degrades to
-# plain project name if jq is missing or state.json is absent.
+# and renders the project name as a colored pill. Uses node (always present)
+# instead of jq.
 
 STATE="$HOME/.config/ghostcode/state.json"
 
-# Claude Code feeds session metadata as JSON on stdin — read it to get cwd
-# if available, else fall back to $PWD.
 INPUT="$(cat 2>/dev/null || true)"
+
+# Resolve cwd from CC stdin if available, else $PWD.
 CWD=""
-if [ -n "$INPUT" ] && command -v jq >/dev/null 2>&1; then
-  CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // .workspace.current_dir // empty' 2>/dev/null)
+if [ -n "$INPUT" ] && command -v node >/dev/null 2>&1; then
+  CWD=$(printf '%s' "$INPUT" | node -e '
+    let s="";process.stdin.on("data",d=>s+=d);
+    process.stdin.on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j.cwd||j.workspace?.current_dir||"");}catch{}});
+  ' 2>/dev/null)
 fi
 [ -z "$CWD" ] && CWD="$PWD"
 PROJECT="$(basename "$CWD")"
 
 COLOR=""
-if [ -f "$STATE" ] && command -v jq >/dev/null 2>&1; then
-  COLOR=$(jq -r --arg k "$CWD" '.perProject[$k].color // empty' "$STATE" 2>/dev/null)
+if [ -f "$STATE" ] && command -v node >/dev/null 2>&1; then
+  COLOR=$(node -e "
+    try {
+      const s=require('fs').readFileSync('$STATE','utf8');
+      const j=JSON.parse(s);
+      const c=(j.perProject||{})[process.argv[1]]?.color||'';
+      process.stdout.write(c);
+    } catch {}
+  " "$CWD" 2>/dev/null)
 fi
 
 if [ -n "$COLOR" ] && [[ "$COLOR" =~ ^#[0-9a-fA-F]{6}$ ]]; then
@@ -36,7 +36,6 @@ if [ -n "$COLOR" ] && [[ "$COLOR" =~ ^#[0-9a-fA-F]{6}$ ]]; then
   R=$((16#${HEX[1,2]}))
   G=$((16#${HEX[3,4]}))
   B=$((16#${HEX[5,6]}))
-  # 24-bit bg + bright white fg + padded spaces → pill look.
   printf "\e[48;2;%d;%d;%dm\e[97m %s \e[0m" "$R" "$G" "$B" "$PROJECT"
 else
   printf "%s" "$PROJECT"
