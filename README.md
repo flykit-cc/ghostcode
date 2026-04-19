@@ -7,12 +7,28 @@ A Ghostty launcher for Claude Code. Part of [flykit.cc](https://flykit.cc).
 
 ![Dashboard](assets/screenshots/dashboard.png)
 
+## Use Claude Code with any LLM
+
+Claude Code is a powerful agentic coding engine — but it doesn't have to run on Claude. GhostCode makes it trivial to point it at any OpenAI-compatible endpoint: open-weight models, self-hosted inference, or commercial APIs that speak the Anthropic protocol. Switch providers per-project, and your keys stay in the macOS Keychain — never in a config file, never in an env var you forget to unset.
+
+Built-in providers out of the box:
+
+| Provider | API |
+|---|---|
+| Claude | subscription (OAuth) — no key needed |
+| Anthropic | API key — pay-per-token |
+| GLM (Z.ai) | API key — GLM-5.1 and family |
+| Kimi K2 | API key — Moonshot |
+| Qwen3 Coder | API key — DashScope |
+
+Add your own in `~/.config/ghostcode/providers.json` — any OpenAI-compatible endpoint works.
+
 ## Features
 
 - **Fuzzy project picker** — type a few chars, starred favorites pinned on top, auto-tracked recents below
 - **Per-project tints** — press `⇧C` to cycle a color; it follows the project into CC's statusline too
 - **Model, effort, mode, provider** — all visible on the Dashboard, saved per-project and globally
-- **Providers beyond Claude** — Anthropic API, GLM (Z.ai), Kimi (Moonshot), Qwen (DashScope), plus whatever you add
+- **Any LLM as a backend** — GLM, Kimi, Qwen, self-hosted, or any OpenAI-compatible endpoint; keys in Keychain
 - **First-run wizard** — installs Ghostty if missing, wires Ghostty config, wires the CC statusline, applies the custom app icon. Aborts cleanly if you skip.
 - **`claude update` on every launch** — always ships you the latest
 
