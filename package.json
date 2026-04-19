@@ -1,6 +1,6 @@
 {
   "name": "@flykit/ghostcode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Ghostty launcher for Claude Code — project picker, per-project tints, permission-mode control, and a first-run setup wizard.",
   "keywords": ["ghostty", "claude-code", "launcher", "cli", "ink"],
   "author": "@kaiomp (flykit.cc)",
@@ -9,8 +9,19 @@
   "bin": {
     "ghostcode": "./launcher.sh"
   },
+  "files": [
+    "launcher.sh",
+    "scripts/",
+    "dist/",
+    "assets/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "bun run src/index.tsx",
+    "build": "bun build src/index.tsx --target=node --format=esm --outfile=dist/ghostcode.js",
+    "prepublishOnly": "bun run build",
+    "test": "bun test",
     "init": "./scripts/init.sh"
   },
   "dependencies": {
@@ -19,7 +30,8 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
-    "typescript": "^5.6.3",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "react-devtools-core": "^7.0.1",
+    "typescript": "^5.6.3"
   }
 }
