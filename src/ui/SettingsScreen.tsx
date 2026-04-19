@@ -13,7 +13,6 @@ export type SettingsAction =
   | "clearRecents"
   | "clearFavorites"
   | "clearTints"
-  | "refreshIcon"
   | "rerunSetup"
   | "resetAll"
   | "back";
@@ -63,11 +62,6 @@ export function SettingsScreen({ roots, counts, onAction, onCancel }: Props) {
       label: "Clear tint colors",
       sublabel:
         counts.tints > 0 ? `${counts.tints} tinted` : "nothing to clear",
-    },
-    {
-      id: "refreshIcon",
-      label: "Refresh Ghostty icon",
-      sublabel: "re-applies icon, restarts Ghostty",
     },
     {
       id: "rerunSetup",

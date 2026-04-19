@@ -1,10 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { useApp } from "ink";
-import { spawn } from "node:child_process";
 import { rmSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { Dashboard, type DashboardValues } from "./Dashboard.tsx";
 import { ProjectPicker } from "./ProjectPicker.tsx";
 import { ListPicker, type ListItem } from "./ListPicker.tsx";
@@ -209,28 +207,6 @@ export function App({ onDone }: Props) {
       case "projectRoots":
         setMode("projectRoots");
         break;
-      case "refreshIcon": {
-        // Spawn the detached helper; it waits for Ghostty to exit, re-applies
-        // the icon, then reopens Ghostty. We issue the Ghostty quit and then
-        // exit ourselves so the helper has a clean slate.
-        const scriptPath = join(
-          dirname(fileURLToPath(import.meta.url)),
-          "..",
-          "..",
-          "scripts",
-          "refresh-icon.sh",
-        );
-        spawn("/bin/sh", [scriptPath], {
-          detached: true,
-          stdio: "ignore",
-        }).unref();
-        spawn("osascript", ["-e", 'tell application "Ghostty" to quit'], {
-          detached: true,
-          stdio: "ignore",
-        }).unref();
-        finish({ kind: "quit" });
-        break;
-      }
       case "clearRecents": {
         const next = clearRecents(state);
         saveState(next);

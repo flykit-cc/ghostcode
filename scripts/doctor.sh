@@ -11,10 +11,8 @@ CONFIG_DIR="$HOME/.config/ghostcode"
 CONFIG="$CONFIG_DIR/config.json"
 STATE="$CONFIG_DIR/state.json"
 MARKER="$CONFIG_DIR/.setup-complete"
-ICON_HASH="$CONFIG_DIR/.icon-hash"
 GHOSTTY_CONF="$HOME/Library/Application Support/com.mitchellh.ghostty/config.ghostty"
 CC_SETTINGS="$HOME/.claude/settings.json"
-ICON_PNG="$REPO_ROOT/assets/ghostcode-icon.png"
 
 VERSION=$(node -e "console.log(require('$REPO_ROOT/package.json').version)" 2>/dev/null || echo "?")
 
@@ -32,7 +30,6 @@ if command -v brew >/dev/null 2>&1; then ok "brew"; else fail "brew missing — 
 if command -v node >/dev/null 2>&1; then ok "node ($(node --version))"; else fail "node missing — the launcher won't start"; fi
 if [ -d "/Applications/Ghostty.app" ]; then ok "Ghostty.app"; else fail "Ghostty not installed — ghostcode refuses to launch"; fi
 if command -v claude >/dev/null 2>&1; then ok "claude ($(claude --version 2>/dev/null | head -1))"; else warn "claude CLI missing — will auto-install on next launch"; fi
-if command -v fileicon >/dev/null 2>&1; then ok "fileicon"; else warn "fileicon missing — custom Ghostty icon won't apply"; fi
 
 # ── Files & config ─────────────────────────────────────────────────────
 section "Config files"
@@ -78,15 +75,6 @@ if [ -f "$CC_SETTINGS" ]; then
   fi
 else
   warn "~/.claude/settings.json missing — CC statusline skipped"
-fi
-if [ -f "$ICON_PNG" ]; then
-  if [ -f "$ICON_HASH" ]; then
-    ok "icon applied · hash $(cat "$ICON_HASH" | cut -c1-7)…"
-  else
-    warn "icon PNG present but not applied"
-  fi
-else
-  warn "no icon PNG at assets/ghostcode-icon.png"
 fi
 
 # ── Summary ────────────────────────────────────────────────────────────

@@ -6,13 +6,10 @@
 set -u
 
 SCRIPT_DIR="${0:A:h}"
-REPO_ROOT="${SCRIPT_DIR:h}"
 
 MARKER="$HOME/.config/ghostcode/.setup-complete"
 CONFIG_DIR="$HOME/.config/ghostcode"
 STATUSLINE_CMD="$SCRIPT_DIR/statusline.sh"
-ICON_SCRIPT="$SCRIPT_DIR/set-icon.sh"
-ICON_PNG="$REPO_ROOT/assets/ghostcode-icon.png"
 GHOSTTY_CONF="$HOME/Library/Application Support/com.mitchellh.ghostty/config.ghostty"
 CC_SETTINGS="$HOME/.claude/settings.json"
 
@@ -21,7 +18,6 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 section() { printf "\n\033[1;35m› %s\033[0m\n" "$1"; }
 ok()      { printf "  \033[32m✓\033[0m %s\n" "$1"; }
-skip()    { printf "  \033[2m∘ %s\033[0m\n" "$1"; }
 abort()   { printf "\n\033[1;31m✗ %s\033[0m\n" "$1"; exit 1; }
 
 # read_yn: prints prompt and returns 0 on y/Y/<Enter>, 1 on n/N.
@@ -44,7 +40,6 @@ What this wizard will do:
   • Install Ghostty if missing
   • Wire Ghostty to launch GhostCode on startup
   • Wire CC statusline to show project tints
-  • Apply the GhostCode icon to Ghostty.app
 
 GhostCode is MIT-licensed. No telemetry. Not affiliated with
 Anthropic or Mitchell Hashimoto. Source: github.com/flykit-cc/ghostcode
@@ -80,17 +75,7 @@ if ! command -v claude >/dev/null 2>&1; then
   ok "Claude Code installed"
 fi
 
-# ── Step 3: fileicon (required — applies the icon) ─────────────────────
-section "fileicon"
-
-if command -v fileicon >/dev/null 2>&1; then
-  ok "fileicon already installed"
-else
-  brew install fileicon >/dev/null 2>&1 || abort "fileicon install failed"
-  ok "fileicon installed"
-fi
-
-# ── Step 4: Ghostty config wiring ──────────────────────────────────────
+# ── Step 3: Ghostty config wiring ──────────────────────────────────────
 section "Ghostty configuration"
 
 mkdir -p "$(dirname "$GHOSTTY_CONF")"
@@ -104,7 +89,7 @@ else
   ok "Wrote Ghostty startup command"
 fi
 
-# ── Step 5: CC statusline ──────────────────────────────────────────────
+# ── Step 4: CC statusline ──────────────────────────────────────────────
 section "Claude Code statusline"
 
 mkdir -p "$(dirname "$CC_SETTINGS")"
@@ -131,16 +116,6 @@ EOF
   fi
   ok "Wrote CC statusline config"
 fi
-
-# ── Step 6: Apply icon (always) ────────────────────────────────────────
-section "GhostCode icon"
-
-"$ICON_SCRIPT" set >/dev/null 2>&1 && {
-  touch "/Applications/Ghostty.app"
-  killall Dock 2>/dev/null || true
-  killall Finder 2>/dev/null || true
-  ok "Icon applied"
-} || skip "Icon apply failed (non-fatal)"
 
 # ── Done ───────────────────────────────────────────────────────────────
 touch "$MARKER"

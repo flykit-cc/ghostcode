@@ -152,7 +152,7 @@ export function Dashboard({
   if (hasEffortPicker) addRow("effort", "Effort", effortLabel(values.effort));
   if (vsCodeAvailable)
     addRow("vscode", "VS Code", values.openVSCode ? "◉ also open" : "○ skip");
-  addRow("settings", "Settings", "⚙ roots, clear state, icon…");
+  addRow("settings", "Settings", "⚙ roots, clear state…");
 
   const rowMaxLen = Math.max(
     ...specs.map((s) => s.prefix.length + s.value.length),

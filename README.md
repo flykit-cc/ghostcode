@@ -29,7 +29,7 @@ Add your own in `~/.config/ghostcode/providers.json` — any OpenAI-compatible e
 - **Per-project tints** — press `⇧C` to cycle a color; it follows the project into CC's statusline too
 - **Model, effort, mode, provider** — all visible on the Dashboard, saved per-project and globally
 - **Any LLM as a backend** — GLM, Kimi, Qwen, self-hosted, or any OpenAI-compatible endpoint; keys in Keychain
-- **First-run wizard** — installs Ghostty if missing, wires Ghostty config, wires the CC statusline, applies the custom app icon. Aborts cleanly if you skip.
+- **First-run wizard** — installs Ghostty if missing, wires Ghostty config, wires the CC statusline. Aborts cleanly if you skip.
 - **`claude update` on every launch** — always ships you the latest
 
 ![Provider picker](assets/screenshots/provider-picker.png)
@@ -39,7 +39,7 @@ Add your own in `~/.config/ghostcode/providers.json` — any OpenAI-compatible e
 - **macOS**
 - **Homebrew** — [brew.sh](https://brew.sh)
 
-Everything else (Ghostty, Claude Code, fileicon) is installed by the first-run wizard.
+Everything else (Ghostty, Claude Code) is installed by the first-run wizard.
 
 ## Install
 
@@ -68,10 +68,9 @@ $(npm root -g)/@flykit/ghostcode/scripts/doctor.sh
 
 | Location | When | Reversible? |
 |---|---|---|
-| `~/.config/ghostcode/` | Always — state, config, setup marker, icon hash | `rm -rf ~/.config/ghostcode` |
+| `~/.config/ghostcode/` | Always — state, config, setup marker | `rm -rf ~/.config/ghostcode` |
 | Ghostty config | During setup — appends a `command = ghostcode` line | Remove the line manually |
 | `~/.claude/settings.json` | During setup — sets `statusLine` | Delete the `statusLine` key |
-| `/Applications/Ghostty.app` icon | During setup — via [`fileicon`](https://github.com/mklement0/fileicon) (sidecar icon; does NOT modify the app bundle or break code signing) | Settings → "Refresh Ghostty icon" offers a restart path; `fileicon rm /Applications/Ghostty.app` to fully remove |
 | macOS Keychain (items under account `ghostcode`) | When you store non-OAuth provider API keys | Keychain Access → delete entries |
 
 No telemetry. No network calls beyond `claude update`, `brew`, and `npm` — all gated behind wizard prompts. State is local-only.
@@ -83,8 +82,6 @@ npm uninstall -g @flykit/ghostcode
 rm -rf ~/.config/ghostcode
 # Remove the `command = ghostcode` line from your Ghostty config
 # Remove the `statusLine` key from ~/.claude/settings.json if added
-# Restore Ghostty's default icon:
-fileicon rm /Applications/Ghostty.app && killall Dock
 ```
 
 ## Disclaimers
