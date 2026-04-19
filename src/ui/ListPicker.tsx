@@ -36,12 +36,15 @@ export function ListPicker({
       return setIndex((i) => Math.min(items.length - 1, i + 1));
   });
 
-  // Build all row contents first, then pad to a uniform width so the magenta
-  // background on the active row looks like a solid block — not a ragged edge.
+  // Two-column layout: labels left-aligned to the widest label, sublabels
+  // follow after a fixed 2-space gutter. No `·` separator — the gap does the
+  // work visually and rows line up like the Dashboard.
+  const maxLabelLen = Math.max(...items.map((it) => it.label.length));
   const contents = items.map((it, i) => {
     const arrow = i === index ? "▸" : " ";
-    const sub = it.sublabel ? `  ·  ${it.sublabel}` : "";
-    return ` ${arrow}  ${it.label}${sub}`;
+    const label = it.label.padEnd(maxLabelLen);
+    const sub = it.sublabel ? `  ${it.sublabel}` : "";
+    return ` ${arrow}  ${label}${sub}`;
   });
   const maxLen = Math.max(...contents.map((c) => c.length));
   const padded = contents.map((c) => c + " ".repeat(maxLen - c.length) + "  ");
