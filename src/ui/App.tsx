@@ -3,12 +3,14 @@ import { useApp } from "ink";
 import { spawn } from "node:child_process";
 import { rmSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Dashboard, type DashboardValues } from "./Dashboard.tsx";
 import { ProjectPicker } from "./ProjectPicker.tsx";
 import { ListPicker, type ListItem } from "./ListPicker.tsx";
 import { SecretPrompt } from "./SecretPrompt.tsx";
 import { SettingsScreen, type SettingsAction } from "./SettingsScreen.tsx";
+import { ProjectRootsScreen } from "./ProjectRootsScreen.tsx";
 import { discoverProjects, loadRoots, type Project } from "../projects.ts";
 import { loadProviders, type Provider } from "../providers.ts";
 import {
@@ -36,7 +38,8 @@ type Mode =
   | "effort"
   | "mode"
   | "settings"
-  | "secret";
+  | "secret"
+  | "projectRoots";
 
 export type Outcome =
   | { kind: "quit" }
@@ -48,7 +51,6 @@ export type Outcome =
 
 type Props = { onDone: (outcome: Outcome) => void };
 
-const CONFIG_PATH = join(homedir(), ".config/ghostcode/config.json");
 const SETUP_MARKER = join(homedir(), ".config/ghostcode/.setup-complete");
 
 const EFFORT_ITEMS: ListItem[] = [
@@ -204,11 +206,31 @@ export function App({ onDone }: Props) {
 
   function handleSettingsAction(action: SettingsAction) {
     switch (action) {
-      case "editConfig":
-        // `open` is async + GUI — doesn't fight Ink for the terminal.
-        spawn("open", [CONFIG_PATH], { stdio: "ignore", detached: true });
-        setMode("dashboard");
+      case "projectRoots":
+        setMode("projectRoots");
         break;
+      case "refreshIcon": {
+        // Spawn the detached helper; it waits for Ghostty to exit, re-applies
+        // the icon, then reopens Ghostty. We issue the Ghostty quit and then
+        // exit ourselves so the helper has a clean slate.
+        const scriptPath = join(
+          dirname(fileURLToPath(import.meta.url)),
+          "..",
+          "..",
+          "scripts",
+          "refresh-icon.sh",
+        );
+        spawn("/bin/sh", [scriptPath], {
+          detached: true,
+          stdio: "ignore",
+        }).unref();
+        spawn("osascript", ["-e", 'tell application "Ghostty" to quit'], {
+          detached: true,
+          stdio: "ignore",
+        }).unref();
+        finish({ kind: "quit" });
+        break;
+      }
       case "clearRecents": {
         const next = clearRecents(state);
         saveState(next);
@@ -228,8 +250,6 @@ export function App({ onDone }: Props) {
         break;
       }
       case "rerunSetup": {
-        // Delete the marker so launcher.sh runs init.sh on next Ghostty open.
-        // We exit the current session — user reopens Ghostty to redo setup.
         try {
           rmSync(SETUP_MARKER, { force: true });
         } catch {
@@ -250,7 +270,6 @@ export function App({ onDone }: Props) {
         break;
       }
       case "back":
-        // Re-discover projects in case the user edited the config file.
         setProjectRev((r) => r + 1);
         setMode("dashboard");
         break;
@@ -383,6 +402,17 @@ export function App({ onDone }: Props) {
         onCancel={() => {
           setProjectRev((r) => r + 1);
           setMode("dashboard");
+        }}
+      />
+    );
+  }
+
+  if (mode === "projectRoots") {
+    return (
+      <ProjectRootsScreen
+        onDone={() => {
+          setProjectRev((r) => r + 1);
+          setMode("settings");
         }}
       />
     );
