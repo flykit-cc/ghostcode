@@ -22,6 +22,14 @@ export type LaunchPlan = {
 };
 
 export function runLaunch(plan: LaunchPlan): number {
+  const check = spawnSync("command", ["-v", "claude"], { encoding: "utf8" });
+  if (check.status !== 0 || !check.stdout.trim()) {
+    process.stderr.write(
+      "\x1b[31mclaude not found.\x1b[0m Run: npm i -g @anthropic-ai/claude-code\n"
+    );
+    return 1;
+  }
+
   const env: NodeJS.ProcessEnv = { ...process.env, ...plan.provider.env };
   if (plan.provider.secret && plan.secretValue) {
     env[plan.provider.secret.envVar] = plan.secretValue;
