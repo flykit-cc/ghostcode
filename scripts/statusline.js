@@ -75,6 +75,15 @@ let pill = rgb
   : ` ${projectName} `;
 pill = hyperlink(ghUrl, pill);
 
+// Editor link — opens the project folder in VS Code (or Cursor as fallback).
+// Hidden if neither is installed.
+let editorLink = '';
+if (fs.existsSync('/Applications/Visual Studio Code.app')) {
+  editorLink = hyperlink(`vscode://file${projectRoot}`, `\x1b[2m<>\x1b[0m`);
+} else if (fs.existsSync('/Applications/Cursor.app')) {
+  editorLink = hyperlink(`cursor://file${projectRoot}`, `\x1b[2m<>\x1b[0m`);
+}
+
 // Cache TTL countdown — Claude-only.
 let ttlLabel = '';
 if (isClaude) {
@@ -167,7 +176,8 @@ const ctxMaxFmt = ctxSize ? fmtCtxSize(ctxSize) : '';
 const tokenField = ctxMaxFmt ? `${ctxTokFmt}${dim('/' + ctxMaxFmt)}` : ctxTokFmt;
 const barField = `${skull}${barColored} ${scaledPct}% ${dim(`(${rawPct}%)`)} · ${tokenField}`;
 
-const row1Parts = [pill, modelSegment];
+const pillSegment = editorLink ? `${pill} ${editorLink}` : pill;
+const row1Parts = [pillSegment, modelSegment];
 if (branch) row1Parts.push(branch);
 if (issueBlock) row1Parts.push(issueBlock);
 row1Parts.push(barField);
