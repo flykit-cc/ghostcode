@@ -97,9 +97,9 @@ if (isClaude) {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   };
   if (idleMs < TTL - 60_000) {
-    ttlLabel = `\x1b[92mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
+    ttlLabel = `\x1b[38;2;120;180;120mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
   } else if (idleMs < TTL) {
-    ttlLabel = `\x1b[93mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
+    ttlLabel = `\x1b[38;2;200;170;80mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
   } else {
     ttlLabel = `\x1b[2mttl expired ${fmtMMSS(idleMs - TTL)}\x1b[0m`;
   }
@@ -156,21 +156,21 @@ const bar = '█'.repeat(filled) + '░'.repeat(barWidth - filled);
 
 let barColored, skull = '';
 if (scaledPct < 63) {
-  barColored = `\x1b[92m${bar}\x1b[0m`;
+  barColored = `\x1b[38;2;120;180;120m${bar}\x1b[0m`;
 } else if (scaledPct < 81) {
-  barColored = `\x1b[93m${bar}\x1b[0m`;
+  barColored = `\x1b[38;2;200;170;80m${bar}\x1b[0m`;
 } else if (scaledPct < 95) {
-  barColored = `\x1b[38;5;214m${bar}\x1b[0m`;
+  barColored = `\x1b[38;2;220;150;80m${bar}\x1b[0m`;
 } else {
-  barColored = `\x1b[5;91m${bar}\x1b[0m`;
-  skull = `\x1b[5;91m💀\x1b[0m `;
+  barColored = `\x1b[5;38;2;210;100;100m${bar}\x1b[0m`;
+  skull = `\x1b[5;38;2;210;100;100m💀\x1b[0m `;
 }
 
 const dim = (s) => `\x1b[2m${s}\x1b[0m`;
 const sep = dim('│');
 
 // Row 1
-const modelSegment = ttlLabel ? `${modelName} ${ttlLabel}` : modelName;
+const modelSegment = modelName;
 const ctxTokFmt = fmtTokens(ctxTokens);
 const ctxMaxFmt = ctxSize ? fmtCtxSize(ctxSize) : '';
 const tokenField = ctxMaxFmt ? `${ctxTokFmt}${dim('/' + ctxMaxFmt)}` : ctxTokFmt;
@@ -183,17 +183,24 @@ if (issueBlock) row1Parts.push(issueBlock);
 row1Parts.push(barField);
 const row1 = row1Parts.join(` ${sep} `);
 
-// Row 2 — last turn stats, Claude-only (others don't expose cache_read)
+// Row 2 — last turn stats + ttl. Claude-only (others don't expose cache_read).
 let row2 = '';
-if (isClaude && (lastSent > 0 || lastOutput > 0)) {
-  // Color the hit-rate % on its own, rest of the row stays dim.
-  const pctColor =
-    cachedPct >= 80 ? '\x1b[92m'  // bright green
-    : cachedPct >= 50 ? '\x1b[93m'  // bright yellow
-    : '\x1b[91m';                   // bright red
-  const coloredPct = `\x1b[22m${pctColor}${cachedPct}%\x1b[0m\x1b[2m`;
-  const sentFrac = `↑ ${fmtTokens(lastCacheRead)}/${fmtTokens(lastSent)} (${coloredPct})`;
-  row2 = dim(` ${sentFrac} · ↓ ${fmtTokens(lastOutput)}`);
+if (isClaude) {
+  const statsSegment =
+    lastSent > 0 || lastOutput > 0
+      ? (() => {
+          const pctColor =
+            cachedPct >= 80 ? '\x1b[38;2;120;180;120m'
+            : cachedPct >= 50 ? '\x1b[38;2;200;170;80m'
+            : '\x1b[38;2;210;100;100m';
+          const coloredPct = `\x1b[22m${pctColor}${cachedPct}%\x1b[0m\x1b[2m`;
+          const sentFrac = `↑ ${fmtTokens(lastCacheRead)}/${fmtTokens(lastSent)} (${coloredPct})`;
+          return dim(` ${sentFrac} · ↓ ${fmtTokens(lastOutput)}`);
+        })()
+      : '';
+  if (statsSegment && ttlLabel) row2 = `${statsSegment} · ${ttlLabel}`;
+  else if (statsSegment) row2 = statsSegment;
+  else if (ttlLabel) row2 = ' ' + ttlLabel;
 }
 
 process.stdout.write(row1 + '\n' + (row2 ? row2 + '\n' : ''));
