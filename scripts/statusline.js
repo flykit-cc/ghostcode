@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // GhostCode statusline for Claude Code.
 // Installed at ~/.claude/statusline.js by scripts/init.sh.
-// Format: [colored pill] │ model ● │ branch │ bar scaled% (raw%) · Ntokens
+// Two-row format:
+//   row 1: [pill] │ model ttl M:SS │ branch │ #issues │ bar scaled% (raw%) · Ntokens/max
+//   row 2: last turn  ↑ sent · ↓ recv · ~ cached (X%)
+// Cache countdown + cache_read metric are Claude-only.
 
 const fs = require('fs');
 const path = require('path');
@@ -15,7 +18,12 @@ try {
 } catch {}
 
 const cwd = input.cwd || (input.workspace && input.workspace.current_dir) || process.cwd();
-const modelName = (input.model && input.model.display_name) || 'Claude';
+const rawModelName = (input.model && input.model.display_name) || 'Claude';
+// Drop a single trailing " (...)" annotation (e.g. "Opus 4.7 (1M context)" → "Opus 4.7").
+const modelName = rawModelName.replace(/\s*\([^()]*\)\s*$/, '');
+const modelId = (input.model && input.model.id) || '';
+const isClaude = /^claude-/i.test(modelId);
+
 const transcriptPath = input.transcript_path || '';
 const ctxInfo = input.context_window || {};
 const worktree = input.worktree || {};
@@ -28,7 +36,6 @@ function sh(cmd, opts = {}) {
 
 const projectRoot = sh('git rev-parse --show-toplevel', { cwd }) || cwd;
 const projectName = path.basename(projectRoot);
-
 const branch = worktree.branch || sh('git branch --show-current', { cwd: projectRoot });
 
 let tint = '';
@@ -49,6 +56,7 @@ function toHttpsUrl(remote) {
   return '';
 }
 const ghUrl = toHttpsUrl(sh('git remote get-url origin', { cwd: projectRoot }));
+const isGithub = /^https:\/\/github\.com\//.test(ghUrl);
 
 function hexToRgb(h) {
   const m = /^#([0-9a-f]{6})$/i.exec(h || '');
@@ -58,26 +66,21 @@ function hexToRgb(h) {
 }
 
 const isGhostty = process.env.TERM_PROGRAM === 'ghostty' || !!process.env.GHOSTTY_RESOURCES_DIR;
+const hyperlink = (url, text) =>
+  isGhostty && url ? `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\` : text;
+
 const rgb = hexToRgb(tint);
 let pill = rgb
   ? `\x1b[48;2;${rgb[0]};${rgb[1]};${rgb[2]}m\x1b[97m ${projectName} \x1b[0m`
   : ` ${projectName} `;
-if (isGhostty && ghUrl) {
-  pill = `\x1b]8;;${ghUrl}\x1b\\${pill}\x1b]8;;\x1b\\`;
-}
+pill = hyperlink(ghUrl, pill);
 
-// Cache indicator — Claude-only (5min TTL on Anthropic prompt cache).
-// Live countdown; requires statusLine.refreshInterval in settings.json.
-const modelId = (input.model && input.model.id) || '';
-const isClaude = /^claude-/i.test(modelId);
-
-let cacheDot = '';
+// Cache TTL countdown — Claude-only.
+let ttlLabel = '';
 if (isClaude) {
   let idleMs = 0;
   if (transcriptPath && fs.existsSync(transcriptPath)) {
-    try {
-      idleMs = Date.now() - fs.statSync(transcriptPath).mtimeMs;
-    } catch {}
+    try { idleMs = Date.now() - fs.statSync(transcriptPath).mtimeMs; } catch {}
   }
   const TTL = 5 * 60 * 1000;
   const fmtMMSS = (ms) => {
@@ -85,32 +88,59 @@ if (isClaude) {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   };
   if (idleMs < TTL - 60_000) {
-    cacheDot = `\x1b[32m⏱ ${fmtMMSS(TTL - idleMs)}\x1b[0m`;       // green
+    ttlLabel = `\x1b[32mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
   } else if (idleMs < TTL) {
-    cacheDot = `\x1b[33m⏱ ${fmtMMSS(TTL - idleMs)}\x1b[0m`;       // yellow
+    ttlLabel = `\x1b[33mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
   } else {
-    cacheDot = `\x1b[2m○ ${fmtMMSS(idleMs - TTL)}\x1b[0m`;         // dim elapsed
+    ttlLabel = `\x1b[2mttl expired ${fmtMMSS(idleMs - TTL)}\x1b[0m`;
   }
 }
 
+// Issue numbers — branch name + recent commit messages on this branch.
+function getIssueNumbers() {
+  const nums = [];
+  const seen = new Set();
+  const add = (n) => { if (!seen.has(n)) { seen.add(n); nums.push(n); } };
+  if (branch) {
+    const m = branch.match(/(?:^|[^a-z0-9])(\d{1,5})(?:[^a-z0-9]|$)/i);
+    if (m) add(m[1]);
+  }
+  const log = sh('git log -20 --format=%s', { cwd: projectRoot });
+  const matches = log.match(/#(\d+)/g) || [];
+  for (const m of matches) add(m.slice(1));
+  return nums.slice(0, 3);
+}
+const issues = ghUrl ? getIssueNumbers() : [];
+const issueBlock = issues
+  .map((n) => hyperlink(isGithub ? `${ghUrl}/issues/${n}` : '', `#${n}`))
+  .join(' ');
+
 // Context window — use CC-provided fields directly.
 const rawPct = Math.max(0, Math.min(100, Math.round(ctxInfo.used_percentage ?? 0)));
-// Scale: CC auto-compacts at 80% → display 100% at 80% real.
 const scaledPct = Math.min(100, Math.round((rawPct / 80) * 100));
+const ctxSize = ctxInfo.context_window_size || 0;
 
 const usage = ctxInfo.current_usage || {};
-const ctxTokens =
-  (usage.input_tokens || 0) +
-  (usage.cache_creation_input_tokens || 0) +
-  (usage.cache_read_input_tokens || 0);
+const lastInput = usage.input_tokens || 0;
+const lastCacheWrite = usage.cache_creation_input_tokens || 0;
+const lastCacheRead = usage.cache_read_input_tokens || 0;
+const lastOutput = usage.output_tokens || 0;
+const ctxTokens = lastInput + lastCacheWrite + lastCacheRead;
+const lastSent = lastInput + lastCacheWrite + lastCacheRead;
+const cachedPct = lastSent > 0 ? Math.round((lastCacheRead / lastSent) * 100) : 0;
 
 function fmtTokens(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
   return String(n);
 }
+function fmtCtxSize(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(0) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
+  return String(n);
+}
 
-// 10-segment progress bar.
+// Progress bar with color + skull.
 const barWidth = 10;
 const filled = Math.floor((scaledPct * barWidth) / 100);
 const bar = '█'.repeat(filled) + '░'.repeat(barWidth - filled);
@@ -127,11 +157,31 @@ if (scaledPct < 63) {
   skull = `\x1b[5;31m💀\x1b[0m `;
 }
 
-const dim = s => `\x1b[2m${s}\x1b[0m`;
+const dim = (s) => `\x1b[2m${s}\x1b[0m`;
 const sep = dim('│');
 
-const parts = [pill, cacheDot ? `${modelName} ${cacheDot}` : modelName];
-if (branch) parts.push(branch);
-parts.push(`${skull}${barColored} ${scaledPct}% ${dim(`(${rawPct}%)`)} · ${fmtTokens(ctxTokens)}`);
+// Row 1
+const modelSegment = ttlLabel ? `${modelName} ${ttlLabel}` : modelName;
+const ctxTokFmt = fmtTokens(ctxTokens);
+const ctxMaxFmt = ctxSize ? fmtCtxSize(ctxSize) : '';
+const tokenField = ctxMaxFmt ? `${ctxTokFmt}${dim('/' + ctxMaxFmt)}` : ctxTokFmt;
+const barField = `${skull}${barColored} ${scaledPct}% ${dim(`(${rawPct}%)`)} · ${tokenField}`;
 
-process.stdout.write(parts.join(` ${sep} `) + '\n');
+const row1Parts = [pill, modelSegment];
+if (branch) row1Parts.push(branch);
+if (issueBlock) row1Parts.push(issueBlock);
+row1Parts.push(barField);
+const row1 = row1Parts.join(` ${sep} `);
+
+// Row 2 — last turn stats, Claude-only (others don't expose cache_read)
+let row2 = '';
+if (isClaude && (lastSent > 0 || lastOutput > 0)) {
+  const parts = [
+    `↑ ${fmtTokens(lastSent)} sent`,
+    `↓ ${fmtTokens(lastOutput)} recv`,
+    `~ ${fmtTokens(lastCacheRead)} cached (${cachedPct}%)`,
+  ];
+  row2 = dim(` last turn  ${parts.join(' · ')}`);
+}
+
+process.stdout.write(row1 + '\n' + (row2 ? row2 + '\n' : ''));
