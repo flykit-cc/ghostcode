@@ -66,23 +66,31 @@ if (isGhostty && ghUrl) {
   pill = `\x1b]8;;${ghUrl}\x1b\\${pill}\x1b]8;;\x1b\\`;
 }
 
-// Cache idle indicator — 5min TTL on Anthropic prompt cache.
-let idleMs = 0;
-if (transcriptPath && fs.existsSync(transcriptPath)) {
-  try {
-    const stat = fs.statSync(transcriptPath);
-    idleMs = Date.now() - stat.mtimeMs;
-  } catch {}
-}
-const idleMin = Math.floor(idleMs / 60000);
+// Cache indicator — Claude-only (5min TTL on Anthropic prompt cache).
+// Live countdown; requires statusLine.refreshInterval in settings.json.
+const modelId = (input.model && input.model.id) || '';
+const isClaude = /^claude-/i.test(modelId);
 
-let cacheDot;
-if (idleMin < 4) {
-  cacheDot = `\x1b[32m●\x1b[0m`;           // green hot
-} else if (idleMin < 5) {
-  cacheDot = `\x1b[33m● ${idleMin}m\x1b[0m`; // yellow warning
-} else {
-  cacheDot = `\x1b[2m○ ${idleMin}m\x1b[0m`;  // dim cold
+let cacheDot = '';
+if (isClaude) {
+  let idleMs = 0;
+  if (transcriptPath && fs.existsSync(transcriptPath)) {
+    try {
+      idleMs = Date.now() - fs.statSync(transcriptPath).mtimeMs;
+    } catch {}
+  }
+  const TTL = 5 * 60 * 1000;
+  const fmtMMSS = (ms) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+  if (idleMs < TTL - 60_000) {
+    cacheDot = `\x1b[32m⏱ ${fmtMMSS(TTL - idleMs)}\x1b[0m`;       // green
+  } else if (idleMs < TTL) {
+    cacheDot = `\x1b[33m⏱ ${fmtMMSS(TTL - idleMs)}\x1b[0m`;       // yellow
+  } else {
+    cacheDot = `\x1b[2m○ ${fmtMMSS(idleMs - TTL)}\x1b[0m`;         // dim elapsed
+  }
 }
 
 // Context window — use CC-provided fields directly.
@@ -122,7 +130,7 @@ if (scaledPct < 63) {
 const dim = s => `\x1b[2m${s}\x1b[0m`;
 const sep = dim('│');
 
-const parts = [pill, `${modelName} ${cacheDot}`];
+const parts = [pill, cacheDot ? `${modelName} ${cacheDot}` : modelName];
 if (branch) parts.push(branch);
 parts.push(`${skull}${barColored} ${scaledPct}% ${dim(`(${rawPct}%)`)} · ${fmtTokens(ctxTokens)}`);
 
