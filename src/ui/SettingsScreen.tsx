@@ -10,6 +10,7 @@ const REPO = "github.com/flykit-cc/ghostcode";
 
 export type SettingsAction =
   | "projectRoots"
+  | "apiKeys"
   | "clearRecents"
   | "clearFavorites"
   | "clearTints"
@@ -21,12 +22,15 @@ type Counts = {
   recents: number;
   favorites: number;
   tints: number;
+  apiKeys: number;
 };
 
 type Props = {
   roots: string[];
   counts: Counts;
-  onAction: (action: SettingsAction) => void;
+  initialIndex?: number;
+  onIndexChange?: (index: number) => void;
+  onAction: (action: SettingsAction, currentIndex: number) => void;
   onCancel: () => void;
 };
 
@@ -36,12 +40,27 @@ type Item = {
   sublabel?: string;
 };
 
-export function SettingsScreen({ roots, counts, onAction, onCancel }: Props) {
+export function SettingsScreen({
+  roots,
+  counts,
+  initialIndex,
+  onIndexChange,
+  onAction,
+  onCancel,
+}: Props) {
   const items: Item[] = [
     {
       id: "projectRoots",
       label: "Project roots",
       sublabel: `${roots.length} root${roots.length === 1 ? "" : "s"}`,
+    },
+    {
+      id: "apiKeys",
+      label: "API keys",
+      sublabel:
+        counts.apiKeys > 0
+          ? `${counts.apiKeys} set`
+          : "none set",
     },
     {
       id: "clearRecents",
@@ -76,18 +95,24 @@ export function SettingsScreen({ roots, counts, onAction, onCancel }: Props) {
     { id: "back", label: "← Back to dashboard" },
   ];
 
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => {
+    const i = initialIndex ?? 0;
+    return Math.min(Math.max(0, i), items.length - 1);
+  });
+  const update = (next: number) => {
+    setIndex(next);
+    onIndexChange?.(next);
+  };
 
   useInput((_input, key) => {
     if (key.escape) return onCancel();
     if (key.return) {
       const pick = items[index];
-      if (pick) onAction(pick.id);
+      if (pick) onAction(pick.id, index);
       return;
     }
-    if (key.upArrow) return setIndex((i) => Math.max(0, i - 1));
-    if (key.downArrow)
-      return setIndex((i) => Math.min(items.length - 1, i + 1));
+    if (key.upArrow) return update(Math.max(0, index - 1));
+    if (key.downArrow) return update(Math.min(items.length - 1, index + 1));
   });
 
   // Two-column layout matching ListPicker.

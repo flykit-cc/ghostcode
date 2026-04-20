@@ -21,3 +21,15 @@ export function setSecret(service: string, value: string): void {
     { encoding: "utf8" },
   );
 }
+
+export function deleteSecret(service: string): void {
+  spawnSync(
+    "security",
+    ["delete-generic-password", "-a", ACCOUNT, "-s", service],
+    { encoding: "utf8" },
+  );
+}
+
+export function hasSecret(service: string): boolean {
+  return getSecret(service) !== null;
+}

@@ -9,6 +9,8 @@ import { ListPicker, type ListItem } from "./ListPicker.tsx";
 import { SecretPrompt } from "./SecretPrompt.tsx";
 import { SettingsScreen, type SettingsAction } from "./SettingsScreen.tsx";
 import { ProjectRootsScreen } from "./ProjectRootsScreen.tsx";
+import { ApiKeysScreen } from "./ApiKeysScreen.tsx";
+import { ConfirmScreen } from "./ConfirmScreen.tsx";
 import { discoverProjects, loadRoots, type Project } from "../projects.ts";
 import { loadProviders, type Provider } from "../providers.ts";
 import {
@@ -24,7 +26,7 @@ import {
   resetState,
   countTints,
 } from "../state.ts";
-import { setSecret, getSecret } from "../keychain.ts";
+import { setSecret, getSecret, hasSecret } from "../keychain.ts";
 import { detectVSCode } from "../env.ts";
 import type { PermissionMode } from "../launch.ts";
 
@@ -37,7 +39,26 @@ type Mode =
   | "mode"
   | "settings"
   | "secret"
-  | "projectRoots";
+  | "projectRoots"
+  | "apiKeys"
+  | "confirm";
+
+type DashFocus =
+  | "project"
+  | "provider"
+  | "model"
+  | "mode"
+  | "effort"
+  | "vscode"
+  | "settings"
+  | "launch";
+
+type ConfirmSpec = {
+  title: string;
+  message: string;
+  danger?: boolean;
+  onConfirm: () => void;
+};
 
 export type Outcome =
   | { kind: "quit" }
@@ -138,6 +159,15 @@ export function App({ onDone }: Props) {
 
   const [mode, setMode] = useState<Mode>("dashboard");
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
+  const [dashFocus, setDashFocus] = useState<DashFocus>(
+    initialProject ? "launch" : "project",
+  );
+  const [settingsIndex, setSettingsIndex] = useState(0);
+  const [confirmSpec, setConfirmSpec] = useState<ConfirmSpec | null>(null);
+  // Bump to force re-render of lists that depend on external keychain state
+  // (e.g., after setting/deleting an API key so the provider picker reflects
+  // the new status).
+  const [secretsRev, setSecretsRev] = useState(0);
 
   const recents = state.recents
     .map((p) => projects.find((pr) => pr.path === p))
@@ -202,10 +232,14 @@ export function App({ onDone }: Props) {
     finish({ kind: "launch", values: vals, secretValue });
   }
 
-  function handleSettingsAction(action: SettingsAction) {
+  function handleSettingsAction(action: SettingsAction, currentIndex: number) {
+    setSettingsIndex(currentIndex);
     switch (action) {
       case "projectRoots":
         setMode("projectRoots");
+        break;
+      case "apiKeys":
+        setMode("apiKeys");
         break;
       case "clearRecents": {
         const next = clearRecents(state);
@@ -226,26 +260,46 @@ export function App({ onDone }: Props) {
         break;
       }
       case "rerunSetup": {
-        try {
-          rmSync(SETUP_MARKER, { force: true });
-        } catch {
-          // ignore
-        }
-        process.stdout.write(
-          "\n\x1b[35mSetup will re-run next time you open Ghostty.\x1b[0m\n",
-        );
-        finish({ kind: "quit" });
+        setConfirmSpec({
+          title: "Re-run setup wizard?",
+          message:
+            "This will quit ghostcode and re-run the setup wizard next time you open Ghostty.",
+          onConfirm: () => {
+            try {
+              rmSync(SETUP_MARKER, { force: true });
+            } catch {
+              // ignore
+            }
+            process.stdout.write(
+              "\n\x1b[35mSetup will re-run next time you open Ghostty.\x1b[0m\n",
+            );
+            finish({ kind: "quit" });
+          },
+        });
+        setMode("confirm");
         break;
       }
       case "resetAll": {
-        const next = resetState();
-        saveState(next);
-        setState(next);
-        setValues((v) => ({ ...v, project: null }));
-        setMode("dashboard");
+        setConfirmSpec({
+          title: "Reset all state?",
+          message:
+            "Wipes recents, favorites, tints, and per-project settings. API keys in Keychain are not affected.",
+          danger: true,
+          onConfirm: () => {
+            const next = resetState();
+            saveState(next);
+            setState(next);
+            setValues((v) => ({ ...v, project: null }));
+            setDashFocus("project");
+            setConfirmSpec(null);
+            setMode("dashboard");
+          },
+        });
+        setMode("confirm");
         break;
       }
       case "back":
+        setDashFocus("settings");
         setProjectRev((r) => r + 1);
         setMode("dashboard");
         break;
@@ -261,6 +315,7 @@ export function App({ onDone }: Props) {
         getColor={(path) => state.perProject[path]?.color}
         onPick={(p) => {
           applyProjectDefaults(p);
+          setDashFocus("project");
           setMode("dashboard");
         }}
         onToggleFavorite={(p) => {
@@ -282,6 +337,7 @@ export function App({ onDone }: Props) {
           // If there's already a project, ESC returns to dashboard.
           // If nothing is picked and we have no project, quit to shell.
           if (values.project) {
+            setDashFocus("project");
             setMode("dashboard");
           } else {
             finish({ kind: "quit" });
@@ -292,14 +348,22 @@ export function App({ onDone }: Props) {
   }
 
   if (mode === "provider") {
+    // Suffix sublabel with key status so users see which providers are
+    // configured before picking. secretsRev invalidates this view when a
+    // key is set/deleted via the Settings → API keys screen.
+    void secretsRev;
     return (
       <ListPicker
         title="Provider"
-        items={providers.map((p) => ({
-          id: p.id,
-          label: p.label,
-          sublabel: p.sublabel,
-        }))}
+        items={providers.map((p) => {
+          let sublabel = p.sublabel;
+          if (p.secret) {
+            const set = hasSecret(p.secret.keychainService);
+            const marker = set ? "key ✓" : "needs key";
+            sublabel = sublabel ? `${sublabel} · ${marker}` : marker;
+          }
+          return { id: p.id, label: p.label, sublabel };
+        })}
         initialId={values.provider.id}
         onPick={(item) => {
           const provider = providers.find((p) => p.id === item.id)!;
@@ -309,9 +373,13 @@ export function App({ onDone }: Props) {
             return;
           }
           setValues((v) => ({ ...v, provider, model: "" }));
+          setDashFocus("provider");
           setMode("dashboard");
         }}
-        onCancel={() => setMode("dashboard")}
+        onCancel={() => {
+          setDashFocus("provider");
+          setMode("dashboard");
+        }}
       />
     );
   }
@@ -325,9 +393,13 @@ export function App({ onDone }: Props) {
         initialId={values.model}
         onPick={(item) => {
           setValues((v) => ({ ...v, model: item.id }));
+          setDashFocus("model");
           setMode("dashboard");
         }}
-        onCancel={() => setMode("dashboard")}
+        onCancel={() => {
+          setDashFocus("model");
+          setMode("dashboard");
+        }}
       />
     );
   }
@@ -343,9 +415,13 @@ export function App({ onDone }: Props) {
             ...v,
             effort: item.id as DashboardValues["effort"],
           }));
+          setDashFocus("effort");
           setMode("dashboard");
         }}
-        onCancel={() => setMode("dashboard")}
+        onCancel={() => {
+          setDashFocus("effort");
+          setMode("dashboard");
+        }}
       />
     );
   }
@@ -358,14 +434,22 @@ export function App({ onDone }: Props) {
         initialId={values.mode}
         onPick={(item) => {
           setValues((v) => ({ ...v, mode: item.id as PermissionMode }));
+          setDashFocus("mode");
           setMode("dashboard");
         }}
-        onCancel={() => setMode("dashboard")}
+        onCancel={() => {
+          setDashFocus("mode");
+          setMode("dashboard");
+        }}
       />
     );
   }
 
   if (mode === "settings") {
+    void secretsRev;
+    const apiKeysSet = providers.filter(
+      (p) => p.secret && hasSecret(p.secret.keychainService),
+    ).length;
     return (
       <SettingsScreen
         roots={roots}
@@ -373,9 +457,13 @@ export function App({ onDone }: Props) {
           recents: state.recents.length,
           favorites: state.favorites.length,
           tints: countTints(state),
+          apiKeys: apiKeysSet,
         }}
+        initialIndex={settingsIndex}
+        onIndexChange={setSettingsIndex}
         onAction={handleSettingsAction}
         onCancel={() => {
+          setDashFocus("settings");
           setProjectRev((r) => r + 1);
           setMode("dashboard");
         }}
@@ -394,15 +482,44 @@ export function App({ onDone }: Props) {
     );
   }
 
+  if (mode === "apiKeys") {
+    return (
+      <ApiKeysScreen
+        providers={providers}
+        onDone={() => {
+          setSecretsRev((r) => r + 1);
+          setMode("settings");
+        }}
+      />
+    );
+  }
+
+  if (mode === "confirm" && confirmSpec) {
+    return (
+      <ConfirmScreen
+        title={confirmSpec.title}
+        message={confirmSpec.message}
+        danger={confirmSpec.danger}
+        onConfirm={confirmSpec.onConfirm}
+        onCancel={() => {
+          setConfirmSpec(null);
+          setMode("settings");
+        }}
+      />
+    );
+  }
+
   if (mode === "secret" && pendingProvider?.secret) {
     return (
       <SecretPrompt
         providerLabel={pendingProvider.label}
         onSubmit={(v) => {
           setSecret(pendingProvider.secret!.keychainService, v);
+          setSecretsRev((r) => r + 1);
           const nextValues = { ...values, provider: pendingProvider };
           setValues(nextValues);
           setPendingProvider(null);
+          setDashFocus("provider");
           if (nextValues.project) {
             performLaunch(nextValues);
           } else {
@@ -411,18 +528,18 @@ export function App({ onDone }: Props) {
         }}
         onCancel={() => {
           setPendingProvider(null);
+          setDashFocus("provider");
           setMode("dashboard");
         }}
       />
     );
   }
 
-  // Dashboard is the home screen. The `key` prop resets internal focus state
-  // whenever the project changes — so right after picking a project, focus
-  // jumps to the Launch row instead of sticking on the Project row.
+  // Dashboard is the home screen. Focus is controlled from here so that
+  // returning from a sub-picker lands on the row the user just edited,
+  // instead of snapping back to Launch.
   return (
     <Dashboard
-      key={values.project?.path ?? "__none__"}
       values={values}
       recents={recents}
       vsCodeAvailable={vsCodeAvailable}
@@ -431,7 +548,12 @@ export function App({ onDone }: Props) {
           ? state.perProject[values.project.path]?.color
           : undefined
       }
-      onOpen={(field) => setMode(field as Mode)}
+      focusField={dashFocus}
+      onFocusChange={(f) => setDashFocus(f as DashFocus)}
+      onOpen={(field) => {
+        if (field === "settings") setSettingsIndex(0);
+        setMode(field as Mode);
+      }}
       onToggleVSCode={() =>
         setValues((v) => ({ ...v, openVSCode: !v.openVSCode }))
       }

@@ -32,6 +32,8 @@ type Props = {
   recents: Project[];
   vsCodeAvailable: boolean;
   projectColor?: string;
+  focusField?: FieldId;
+  onFocusChange?: (field: FieldId) => void;
   onOpen: (field: Exclude<FieldId, "vscode" | "launch">) => void;
   onToggleVSCode: () => void;
   onLaunch: () => void;
@@ -43,10 +45,10 @@ function cap(s: string) {
 }
 
 const effortLabel = (e: DashboardValues["effort"]) =>
-  e === "default" ? "Medium (default)" : cap(e);
+  e === "default" ? "Medium" : cap(e);
 
 const MODE_DISPLAY: Record<PermissionMode, string> = {
-  bypassPermissions: "Bypass (default)",
+  bypassPermissions: "Bypass",
   auto: "Auto",
   acceptEdits: "Accept edits",
   plan: "Plan",
@@ -55,13 +57,12 @@ const MODE_DISPLAY: Record<PermissionMode, string> = {
 
 function modelLabel(provider: Provider, model: string): string {
   if (provider.supportsClaudeFlags) {
-    return model === "sonnet" ? "Sonnet" : "Opus (default)";
+    return model === "sonnet" ? "Sonnet" : "Opus";
   }
   if (provider.models?.length) {
     const id = model || provider.models[0].id;
     const item = provider.models.find((m) => m.id === id) ?? provider.models[0];
-    const suffix = model ? "" : " (default)";
-    return `${item.label}${suffix}`;
+    return item.label;
   }
   return "—";
 }
@@ -71,6 +72,8 @@ export function Dashboard({
   recents,
   vsCodeAvailable,
   projectColor,
+  focusField,
+  onFocusChange,
   onOpen,
   onToggleVSCode,
   onLaunch,
@@ -91,19 +94,31 @@ export function Dashboard({
     "launch",
   ];
 
-  // Initial focus: Launch if we already have a project (fast relaunch),
-  // otherwise the Project row (user hasn't picked one yet).
-  const [focus, setFocus] = useState<number>(
+  // Focus is controlled by the parent (App) when `focusField` is supplied, so
+  // returning from a picker lands on the row the user edited instead of
+  // resetting. Fallback: uncontrolled — Launch if a project exists, else
+  // Project.
+  const [localFocus, setLocalFocus] = useState<number>(
     values.project ? fields.indexOf("launch") : fields.indexOf("project"),
   );
+  const focus =
+    focusField !== undefined
+      ? Math.max(0, fields.indexOf(focusField))
+      : localFocus;
   const safeFocus = Math.min(focus, fields.length - 1);
+
+  const setFocus = (next: number) => {
+    const clamped = Math.max(0, Math.min(fields.length - 1, next));
+    setLocalFocus(clamped);
+    onFocusChange?.(fields[clamped]);
+  };
 
   useInput((input, key) => {
     if (key.escape) return onQuit();
     if (key.upArrow)
-      return setFocus((i) => (i === 0 ? fields.length - 1 : i - 1));
+      return setFocus(safeFocus === 0 ? fields.length - 1 : safeFocus - 1);
     if (key.downArrow || key.tab)
-      return setFocus((i) => (i + 1) % fields.length);
+      return setFocus((safeFocus + 1) % fields.length);
     const field = fields[safeFocus];
     if (key.return) {
       if (field === "launch") {
@@ -162,7 +177,7 @@ export function Dashboard({
     <Box flexDirection="column">
       <Header
         title=""
-        hint="↑↓ move · ⏎ edit/launch · space toggle · esc zsh"
+        hint="↑↓ move · ⏎ edit/launch · space toggle · esc shell"
       />
       {specs.map((s) => {
         const active = fields[safeFocus] === s.id;
