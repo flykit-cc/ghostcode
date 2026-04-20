@@ -121,7 +121,7 @@ if [ "$install_statusline" = "1" ]; then
       const fs=require('fs');
       const p='$CC_SETTINGS';
       const j=JSON.parse(fs.readFileSync(p,'utf8'));
-      j.statusLine={type:'command',command:'$STATUSLINE_DST',refreshInterval:10000};
+      j.statusLine={type:'command',command:'$STATUSLINE_DST',refreshInterval:1000};
       fs.writeFileSync(p,JSON.stringify(j,null,2));
     "
   else
@@ -130,7 +130,7 @@ if [ "$install_statusline" = "1" ]; then
   "statusLine": {
     "type": "command",
     "command": "$STATUSLINE_DST",
-    "refreshInterval": 10000
+    "refreshInterval": 1000
   }
 }
 EOF
