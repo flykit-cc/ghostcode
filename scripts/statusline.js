@@ -97,9 +97,9 @@ if (isClaude) {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   };
   if (idleMs < TTL - 60_000) {
-    ttlLabel = `\x1b[32mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
+    ttlLabel = `\x1b[92mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
   } else if (idleMs < TTL) {
-    ttlLabel = `\x1b[33mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
+    ttlLabel = `\x1b[93mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
   } else {
     ttlLabel = `\x1b[2mttl expired ${fmtMMSS(idleMs - TTL)}\x1b[0m`;
   }
@@ -156,14 +156,14 @@ const bar = '█'.repeat(filled) + '░'.repeat(barWidth - filled);
 
 let barColored, skull = '';
 if (scaledPct < 63) {
-  barColored = `\x1b[32m${bar}\x1b[0m`;
+  barColored = `\x1b[92m${bar}\x1b[0m`;
 } else if (scaledPct < 81) {
-  barColored = `\x1b[33m${bar}\x1b[0m`;
+  barColored = `\x1b[93m${bar}\x1b[0m`;
 } else if (scaledPct < 95) {
-  barColored = `\x1b[38;5;208m${bar}\x1b[0m`;
+  barColored = `\x1b[38;5;214m${bar}\x1b[0m`;
 } else {
-  barColored = `\x1b[5;31m${bar}\x1b[0m`;
-  skull = `\x1b[5;31m💀\x1b[0m `;
+  barColored = `\x1b[5;91m${bar}\x1b[0m`;
+  skull = `\x1b[5;91m💀\x1b[0m `;
 }
 
 const dim = (s) => `\x1b[2m${s}\x1b[0m`;
