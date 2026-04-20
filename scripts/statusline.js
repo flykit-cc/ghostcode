@@ -186,12 +186,14 @@ const row1 = row1Parts.join(` ${sep} `);
 // Row 2 — last turn stats, Claude-only (others don't expose cache_read)
 let row2 = '';
 if (isClaude && (lastSent > 0 || lastOutput > 0)) {
-  const parts = [
-    `↑ ${fmtTokens(lastSent)} sent`,
-    `↓ ${fmtTokens(lastOutput)} recv`,
-    `~ ${fmtTokens(lastCacheRead)} cached (${cachedPct}%)`,
-  ];
-  row2 = dim(` last turn  ${parts.join(' · ')}`);
+  // Color the hit-rate % on its own, rest of the row stays dim.
+  const pctColor =
+    cachedPct >= 80 ? '\x1b[92m'  // bright green
+    : cachedPct >= 50 ? '\x1b[93m'  // bright yellow
+    : '\x1b[91m';                   // bright red
+  const coloredPct = `\x1b[22m${pctColor}${cachedPct}%\x1b[0m\x1b[2m`;
+  const sentFrac = `↑ ${fmtTokens(lastCacheRead)}/${fmtTokens(lastSent)} (${coloredPct})`;
+  row2 = dim(` ${sentFrac} · ↓ ${fmtTokens(lastOutput)}`);
 }
 
 process.stdout.write(row1 + '\n' + (row2 ? row2 + '\n' : ''));
