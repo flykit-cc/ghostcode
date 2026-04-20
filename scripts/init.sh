@@ -9,7 +9,8 @@ SCRIPT_DIR="${0:A:h}"
 
 MARKER="$HOME/.config/ghostcode/.setup-complete"
 CONFIG_DIR="$HOME/.config/ghostcode"
-STATUSLINE_CMD="$SCRIPT_DIR/statusline.sh"
+STATUSLINE_SRC="$SCRIPT_DIR/statusline.js"
+STATUSLINE_DST="$HOME/.claude/statusline.js"
 GHOSTTY_CONF="$HOME/Library/Application Support/com.mitchellh.ghostty/config.ghostty"
 CC_SETTINGS="$HOME/.claude/settings.json"
 
@@ -93,15 +94,34 @@ fi
 section "Claude Code statusline"
 
 mkdir -p "$(dirname "$CC_SETTINGS")"
-if [ -f "$CC_SETTINGS" ] && grep -q "ghostcode/scripts/statusline.sh" "$CC_SETTINGS"; then
-  ok "CC statusline already wired"
-else
+mkdir -p "$(dirname "$STATUSLINE_DST")"
+
+# Detect any existing statusline command in CC settings.
+existing_cmd=""
+if [ -f "$CC_SETTINGS" ]; then
+  existing_cmd=$(node -e "
+    try {
+      const j=JSON.parse(require('fs').readFileSync('$CC_SETTINGS','utf8'));
+      process.stdout.write((j.statusLine && j.statusLine.command) || '');
+    } catch {}
+  ")
+fi
+
+install_statusline=1
+if [ -n "$existing_cmd" ] && [ "$existing_cmd" != "$STATUSLINE_DST" ]; then
+  echo "  Existing statusline: $existing_cmd"
+  read_yn "Replace with GhostCode statusline?" || install_statusline=0
+fi
+
+if [ "$install_statusline" = "1" ]; then
+  cp "$STATUSLINE_SRC" "$STATUSLINE_DST"
+  chmod +x "$STATUSLINE_DST"
   if [ -f "$CC_SETTINGS" ]; then
     node -e "
       const fs=require('fs');
       const p='$CC_SETTINGS';
       const j=JSON.parse(fs.readFileSync(p,'utf8'));
-      j.statusLine={type:'command',command:'$STATUSLINE_CMD'};
+      j.statusLine={type:'command',command:'$STATUSLINE_DST'};
       fs.writeFileSync(p,JSON.stringify(j,null,2));
     "
   else
@@ -109,12 +129,14 @@ else
 {
   "statusLine": {
     "type": "command",
-    "command": "$STATUSLINE_CMD"
+    "command": "$STATUSLINE_DST"
   }
 }
 EOF
   fi
-  ok "Wrote CC statusline config"
+  ok "Installed statusline at $STATUSLINE_DST"
+else
+  ok "Kept existing statusline"
 fi
 
 # ── Done ───────────────────────────────────────────────────────────────
