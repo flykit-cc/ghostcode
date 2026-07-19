@@ -85,23 +85,48 @@ if (fs.existsSync('/Applications/Visual Studio Code.app')) {
 }
 
 // Cache TTL countdown — Claude-only.
+// CC picks the prompt-cache TTL per request: 1h on subscription, 5m on API key
+// or when in plan-overage billing. The transcript records which bucket each
+// turn's cache writes went to (cache_creation.ephemeral_{1h,5m}_input_tokens),
+// so read the most recent non-zero entry instead of hardcoding either value.
 let ttlLabel = '';
 if (isClaude) {
   let idleMs = 0;
+  let ttl = 5 * 60 * 1000;
   if (transcriptPath && fs.existsSync(transcriptPath)) {
     try { idleMs = Date.now() - fs.statSync(transcriptPath).mtimeMs; } catch {}
+    try {
+      const fd = fs.openSync(transcriptPath, 'r');
+      const size = fs.fstatSync(fd).size;
+      const len = Math.min(size, 256 * 1024);
+      const buf = Buffer.alloc(len);
+      fs.readSync(fd, buf, 0, len, size - len);
+      fs.closeSync(fd);
+      const tail = buf.toString('utf8');
+      const entries = tail.match(/"cache_creation":\{[^}]*\}/g) || [];
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const h = /"ephemeral_1h_input_tokens":(\d+)/.exec(entries[i]);
+        const m5 = /"ephemeral_5m_input_tokens":(\d+)/.exec(entries[i]);
+        const h1 = h ? +h[1] : 0;
+        const m = m5 ? +m5[1] : 0;
+        if (h1 > 0 || m > 0) {
+          ttl = h1 > 0 ? 60 * 60 * 1000 : 5 * 60 * 1000;
+          break;
+        }
+      }
+    } catch {}
   }
-  const TTL = 5 * 60 * 1000;
+  const warnMs = ttl >= 60 * 60 * 1000 ? 5 * 60_000 : 60_000;
   const fmtMMSS = (ms) => {
     const s = Math.max(0, Math.floor(ms / 1000));
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   };
-  if (idleMs < TTL - 60_000) {
-    ttlLabel = `\x1b[38;2;120;180;120mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
-  } else if (idleMs < TTL) {
-    ttlLabel = `\x1b[38;2;200;170;80mttl ${fmtMMSS(TTL - idleMs)}\x1b[0m`;
+  if (idleMs < ttl - warnMs) {
+    ttlLabel = `\x1b[38;2;120;180;120mttl ${fmtMMSS(ttl - idleMs)}\x1b[0m`;
+  } else if (idleMs < ttl) {
+    ttlLabel = `\x1b[38;2;200;170;80mttl ${fmtMMSS(ttl - idleMs)}\x1b[0m`;
   } else {
-    ttlLabel = `\x1b[2mttl expired ${fmtMMSS(idleMs - TTL)}\x1b[0m`;
+    ttlLabel = `\x1b[2mttl expired ${fmtMMSS(idleMs - ttl)}\x1b[0m`;
   }
 }
 
