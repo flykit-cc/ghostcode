@@ -24,6 +24,7 @@ type FieldId =
   | "mode"
   | "effort"
   | "vscode"
+  | "track"
   | "settings"
   | "launch";
 
@@ -34,7 +35,7 @@ type Props = {
   projectColor?: string;
   focusField?: FieldId;
   onFocusChange?: (field: FieldId) => void;
-  onOpen: (field: Exclude<FieldId, "vscode" | "launch">) => void;
+  onOpen: (field: Exclude<FieldId, "vscode" | "track" | "launch">) => void;
   onToggleVSCode: () => void;
   trackingOn: boolean;
   onToggleTracking: () => void;
@@ -49,7 +50,7 @@ function cap(s: string) {
 const effortLabel = (e: DashboardValues["effort"]) =>
   e === "default" ? "Medium" : cap(e);
 
-const MODE_DISPLAY: Record<PermissionMode, string> = {
+export const MODE_DISPLAY: Record<PermissionMode, string> = {
   bypassPermissions: "Bypass",
   auto: "Auto",
   acceptEdits: "Accept edits",
@@ -94,6 +95,7 @@ export function Dashboard({
     "mode",
     ...(hasEffortPicker ? (["effort"] as const) : []),
     ...(vsCodeAvailable ? (["vscode"] as const) : []),
+    "track",
     "settings",
     "launch",
   ];
@@ -130,9 +132,11 @@ export function Dashboard({
         return;
       }
       if (field === "vscode") return onToggleVSCode();
+      if (field === "track") return onToggleTracking();
       onOpen(field);
     }
     if (input === " " && field === "vscode") onToggleVSCode();
+    if (input === " " && field === "track") onToggleTracking();
     if ((input === "w" || input === "W") && values.project) onToggleTracking();
   });
 
@@ -172,6 +176,11 @@ export function Dashboard({
   if (hasEffortPicker) addRow("effort", "Effort", effortLabel(values.effort));
   if (vsCodeAvailable)
     addRow("vscode", "VS Code", values.openVSCode ? "◉ also open" : "○ skip");
+  addRow(
+    "track",
+    "Track work",
+    trackingOn ? "◉ tracking time + tokens" : "○ off",
+  );
   addRow("settings", "Settings", "⚙ roots, clear state…");
 
   const rowMaxLen = Math.max(

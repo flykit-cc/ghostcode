@@ -3,7 +3,7 @@ import { useApp } from "ink";
 import { rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { Dashboard, type DashboardValues } from "./Dashboard.tsx";
+import { Dashboard, MODE_DISPLAY, type DashboardValues } from "./Dashboard.tsx";
 import { ProjectPicker } from "./ProjectPicker.tsx";
 import { ListPicker, type ListItem } from "./ListPicker.tsx";
 import { SecretPrompt } from "./SecretPrompt.tsx";
@@ -51,6 +51,7 @@ type DashFocus =
   | "mode"
   | "effort"
   | "vscode"
+  | "track"
   | "settings"
   | "launch";
 
@@ -319,11 +320,32 @@ export function App({ onDone }: Props) {
         onPick={(p) => {
           applyProjectDefaults(p);
           if (wizardActive) {
-            setMode("provider");
+            if (state.perProject[p.path]?.providerId) {
+              // Project has saved defaults — skip the provider/model wizard
+              // steps and land ready to launch (Enter twice total).
+              setWizardActive(false);
+              setDashFocus("launch");
+              setMode("dashboard");
+            } else {
+              setMode("provider");
+            }
           } else {
             setDashFocus("project");
             setMode("dashboard");
           }
+        }}
+        onJumpLaunch={(p) => {
+          const vals = applyProjectDefaults(p);
+          setWizardActive(false);
+          performLaunch(vals);
+        }}
+        getSetup={(path) => {
+          const saved = state.perProject[path];
+          if (!saved?.providerId) return undefined;
+          const prov = providers.find((pr) => pr.id === saved.providerId);
+          if (!prov) return undefined;
+          const mode = saved.mode ? MODE_DISPLAY[saved.mode as PermissionMode] : "";
+          return mode ? `${prov.label} · ${mode}` : prov.label;
         }}
         onToggleFavorite={(p) => {
           const next = toggleFavorite(state, p.path);

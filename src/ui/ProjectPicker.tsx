@@ -8,7 +8,11 @@ type Props = {
   recents: string[];
   favorites: string[];
   getColor: (path: string) => string | undefined;
+  // Saved-setup label for a project ("GLM · Bypass"), shown as a dim suffix.
+  getSetup: (path: string) => string | undefined;
   onPick: (p: Project) => void;
+  // Digit keys 1-9: launch that row immediately with its saved defaults.
+  onJumpLaunch: (p: Project) => void;
   onToggleFavorite: (p: Project) => void;
   onCycleColor: (p: Project) => void;
   onCancel: () => void;
@@ -21,7 +25,9 @@ export function ProjectPicker({
   recents,
   favorites,
   getColor,
+  getSetup,
   onPick,
+  onJumpLaunch,
   onToggleFavorite,
   onCycleColor,
   onCancel,
@@ -72,6 +78,13 @@ export function ProjectPicker({
       if (focused) onCycleColor(focused);
       return;
     }
+    // Digits jump-launch the numbered row — only while the filter is empty,
+    // so typing project names containing digits still works mid-query.
+    if (!query && /^[1-9]$/.test(input) && !key.ctrl && !key.meta) {
+      const target = ordered[Number(input) - 1];
+      if (target) onJumpLaunch(target);
+      return;
+    }
     if (input && !key.ctrl && !key.meta) {
       setQuery((q) => q + input);
       setIndex(0);
@@ -97,6 +110,7 @@ export function ProjectPicker({
     color?: string;
     prefix: string;
     name: string;
+    suffix: string;
     totalLen: number;
   };
   const rows: RowSpec[] = visible.map((p, i) => {
@@ -106,8 +120,13 @@ export function ProjectPicker({
     const isRecent = !isFav && !query && recentSet.has(p.path);
     const marker = isFav ? "★" : isRecent ? "⏱" : " ";
     const arrow = active ? "▸" : " ";
-    const prefix = ` ${arrow} ${marker} `;
+    // Digit column only when the filter is empty (digits type into the query
+    // otherwise) — mirrors the jump-launch keybind above.
+    const digit = !query && realIndex < 9 ? String(realIndex + 1) : " ";
+    const prefix = ` ${arrow} ${digit} ${marker} `;
     const name = ` ${projectDisplay(p)} `;
+    const setup = getSetup(p.path);
+    const suffix = setup ? ` ${setup} ` : "";
     return {
       p,
       active,
@@ -116,7 +135,8 @@ export function ProjectPicker({
       color: getColor(p.path),
       prefix,
       name,
-      totalLen: prefix.length + name.length,
+      suffix,
+      totalLen: prefix.length + name.length + suffix.length,
     };
   });
   const maxLen = rows.length ? Math.max(...rows.map((r) => r.totalLen)) : 0;
@@ -125,7 +145,7 @@ export function ProjectPicker({
     <Box flexDirection="column">
       <Header
         title="Project"
-        hint="type to filter · ↑↓ · ⏎ open · ⇧F favorite · ⇧C tint · esc"
+        hint="type to filter · ↑↓ · ⏎ open · 1-9 launch · ⇧F favorite · ⇧C tint · esc"
       />
       <Box>
         <Text color="magenta"> </Text>
@@ -164,6 +184,9 @@ export function ProjectPicker({
                 bold={r.active}
               >
                 {r.name}
+              </Text>
+              <Text backgroundColor={activeBg} color={activeFg} dimColor={!r.active}>
+                {r.suffix}
               </Text>
               <Text backgroundColor={activeBg} color={activeFg}>
                 {tail}

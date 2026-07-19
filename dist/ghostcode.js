@@ -43317,6 +43317,7 @@ function Dashboard({
     "mode",
     ...hasEffortPicker ? ["effort"] : [],
     ...vsCodeAvailable ? ["vscode"] : [],
+    "track",
     "settings",
     "launch"
   ];
@@ -43344,10 +43345,14 @@ function Dashboard({
       }
       if (field === "vscode")
         return onToggleVSCode();
+      if (field === "track")
+        return onToggleTracking();
       onOpen(field);
     }
     if (input === " " && field === "vscode")
       onToggleVSCode();
+    if (input === " " && field === "track")
+      onToggleTracking();
     if ((input === "w" || input === "W") && values2.project)
       onToggleTracking();
   });
@@ -43374,6 +43379,7 @@ function Dashboard({
     addRow("effort", "Effort", effortLabel(values2.effort));
   if (vsCodeAvailable)
     addRow("vscode", "VS Code", values2.openVSCode ? "◉ also open" : "○ skip");
+  addRow("track", "Track work", trackingOn ? "◉ tracking time + tokens" : "○ off");
   addRow("settings", "Settings", "⚙ roots, clear state…");
   const rowMaxLen = Math.max(...specs.map((s) => s.prefix.length + s.value.length));
   return /* @__PURE__ */ import_react23.default.createElement(Box_default, {
@@ -43424,7 +43430,9 @@ function ProjectPicker({
   recents,
   favorites,
   getColor,
+  getSetup,
   onPick,
+  onJumpLaunch,
   onToggleFavorite,
   onCycleColor,
   onCancel
@@ -43471,6 +43479,12 @@ function ProjectPicker({
         onCycleColor(focused);
       return;
     }
+    if (!query && /^[1-9]$/.test(input) && !key.ctrl && !key.meta) {
+      const target = ordered[Number(input) - 1];
+      if (target)
+        onJumpLaunch(target);
+      return;
+    }
     if (input && !key.ctrl && !key.meta) {
       setQuery((q) => q + input);
       setIndex(0);
@@ -43487,8 +43501,11 @@ function ProjectPicker({
     const isRecent = !isFav && !query && recentSet.has(p.path);
     const marker = isFav ? "★" : isRecent ? "⏱" : " ";
     const arrow = active ? "▸" : " ";
-    const prefix = ` ${arrow} ${marker} `;
+    const digit = !query && realIndex < 9 ? String(realIndex + 1) : " ";
+    const prefix = ` ${arrow} ${digit} ${marker} `;
     const name = ` ${projectDisplay(p)} `;
+    const setup = getSetup(p.path);
+    const suffix = setup ? ` ${setup} ` : "";
     return {
       p,
       active,
@@ -43497,7 +43514,8 @@ function ProjectPicker({
       color: getColor(p.path),
       prefix,
       name,
-      totalLen: prefix.length + name.length
+      suffix,
+      totalLen: prefix.length + name.length + suffix.length
     };
   });
   const maxLen = rows.length ? Math.max(...rows.map((r) => r.totalLen)) : 0;
@@ -43505,7 +43523,7 @@ function ProjectPicker({
     flexDirection: "column"
   }, /* @__PURE__ */ import_react24.default.createElement(Header, {
     title: "Project",
-    hint: "type to filter · ↑↓ · ⏎ open · ⇧F favorite · ⇧C tint · esc"
+    hint: "type to filter · ↑↓ · ⏎ open · 1-9 launch · ⇧F favorite · ⇧C tint · esc"
   }), /* @__PURE__ */ import_react24.default.createElement(Box_default, null, /* @__PURE__ */ import_react24.default.createElement(Text, {
     color: "magenta"
   }, " "), /* @__PURE__ */ import_react24.default.createElement(Text, null, query), /* @__PURE__ */ import_react24.default.createElement(Text, {
@@ -43533,6 +43551,10 @@ function ProjectPicker({
       color: r.active ? "white" : r.color ? "white" : inactiveFg,
       bold: r.active
     }, r.name), /* @__PURE__ */ import_react24.default.createElement(Text, {
+      backgroundColor: activeBg,
+      color: activeFg,
+      dimColor: !r.active
+    }, r.suffix), /* @__PURE__ */ import_react24.default.createElement(Text, {
       backgroundColor: activeBg,
       color: activeFg
     }, tail2));
@@ -44505,11 +44527,32 @@ function App2({ onDone }) {
       onPick: (p) => {
         applyProjectDefaults(p);
         if (wizardActive) {
-          setMode("provider");
+          if (state.perProject[p.path]?.providerId) {
+            setWizardActive(false);
+            setDashFocus("launch");
+            setMode("dashboard");
+          } else {
+            setMode("provider");
+          }
         } else {
           setDashFocus("project");
           setMode("dashboard");
         }
+      },
+      onJumpLaunch: (p) => {
+        const vals = applyProjectDefaults(p);
+        setWizardActive(false);
+        performLaunch(vals);
+      },
+      getSetup: (path) => {
+        const saved = state.perProject[path];
+        if (!saved?.providerId)
+          return;
+        const prov = providers.find((pr) => pr.id === saved.providerId);
+        if (!prov)
+          return;
+        const mode2 = saved.mode ? MODE_DISPLAY[saved.mode] : "";
+        return mode2 ? `${prov.label} · ${mode2}` : prov.label;
       },
       onToggleFavorite: (p) => {
         const next = toggleFavorite(state, p.path);
