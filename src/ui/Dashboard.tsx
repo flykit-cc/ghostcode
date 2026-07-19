@@ -36,6 +36,8 @@ type Props = {
   onFocusChange?: (field: FieldId) => void;
   onOpen: (field: Exclude<FieldId, "vscode" | "launch">) => void;
   onToggleVSCode: () => void;
+  trackingOn: boolean;
+  onToggleTracking: () => void;
   onLaunch: () => void;
   onQuit: () => void;
 };
@@ -76,6 +78,8 @@ export function Dashboard({
   onFocusChange,
   onOpen,
   onToggleVSCode,
+  trackingOn,
+  onToggleTracking,
   onLaunch,
   onQuit,
 }: Props) {
@@ -129,10 +133,11 @@ export function Dashboard({
       onOpen(field);
     }
     if (input === " " && field === "vscode") onToggleVSCode();
+    if ((input === "w" || input === "W") && values.project) onToggleTracking();
   });
 
   const projectValue = values.project
-    ? projectDisplay(values.project)
+    ? `${projectDisplay(values.project)}${trackingOn ? " ⏱" : ""}`
     : "— pick a project —";
   const providerValue = `${values.provider.label}${
     values.provider.sublabel ? ` · ${values.provider.sublabel}` : ""
@@ -177,7 +182,7 @@ export function Dashboard({
     <Box flexDirection="column">
       <Header
         title=""
-        hint="↑↓ move · ⏎ edit/launch · space toggle · esc shell"
+        hint="↑↓ move · ⏎ edit/launch · space toggle · W track work · esc shell"
       />
       {specs.map((s) => {
         const active = fields[safeFocus] === s.id;

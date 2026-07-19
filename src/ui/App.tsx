@@ -20,6 +20,7 @@ import {
   toggleFavorite,
   clearRecents,
   setProjectColor,
+  setProjectTracking,
   cycleProjectColor,
   clearFavorites,
   clearTints,
@@ -605,6 +606,16 @@ export function App({ onDone }: Props) {
       onToggleVSCode={() =>
         setValues((v) => ({ ...v, openVSCode: !v.openVSCode }))
       }
+      trackingOn={
+        !!(values.project && state.perProject[values.project.path]?.track)
+      }
+      onToggleTracking={() => {
+        if (!values.project) return;
+        const on = !state.perProject[values.project.path]?.track;
+        const next = setProjectTracking(state, values.project.path, on);
+        saveState(next);
+        setState(next);
+      }}
       onLaunch={() => performLaunch(values)}
       onQuit={() => finish({ kind: "quit" })}
     />

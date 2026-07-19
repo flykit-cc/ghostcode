@@ -13,6 +13,8 @@ export type PerProjectState = {
   // Background color applied to the project name everywhere it's displayed.
   // Hex string (e.g. "#8b4a3a") or undefined for no tint.
   color?: string;
+  // Work-tracker opt-in: sessions in this project log time + tokens.
+  track?: boolean;
 };
 
 // Muted palette with decent contrast against white bold fg. Cycled on `c`
@@ -92,6 +94,18 @@ export function setProjectColor(
   return {
     ...s,
     perProject: { ...s.perProject, [projectPath]: { ...cur, color } },
+  };
+}
+
+export function setProjectTracking(
+  s: State,
+  projectPath: string,
+  on: boolean,
+): State {
+  const cur = s.perProject[projectPath] ?? {};
+  return {
+    ...s,
+    perProject: { ...s.perProject, [projectPath]: { ...cur, track: on } },
   };
 }
 

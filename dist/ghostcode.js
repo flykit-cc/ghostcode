@@ -43301,6 +43301,8 @@ function Dashboard({
   onFocusChange,
   onOpen,
   onToggleVSCode,
+  trackingOn,
+  onToggleTracking,
   onLaunch,
   onQuit
 }) {
@@ -43344,8 +43346,10 @@ function Dashboard({
     }
     if (input === " " && field === "vscode")
       onToggleVSCode();
+    if ((input === "w" || input === "W") && values2.project)
+      onToggleTracking();
   });
-  const projectValue = values2.project ? projectDisplay(values2.project) : "— pick a project —";
+  const projectValue = values2.project ? `${projectDisplay(values2.project)}${trackingOn ? " ⏱" : ""}` : "— pick a project —";
   const providerValue = `${values2.provider.label}${values2.provider.sublabel ? ` · ${values2.provider.sublabel}` : ""}`;
   const launchActive = fields[safeFocus] === "launch";
   const canLaunch = !!values2.project;
@@ -43374,7 +43378,7 @@ function Dashboard({
     flexDirection: "column"
   }, /* @__PURE__ */ import_react23.default.createElement(Header, {
     title: "",
-    hint: "↑↓ move · ⏎ edit/launch · space toggle · esc shell"
+    hint: "↑↓ move · ⏎ edit/launch · space toggle · W track work · esc shell"
   }), specs.map((s) => {
     const active = fields[safeFocus] === s.id;
     const tail2 = " ".repeat(rowMaxLen - s.prefix.length - s.value.length + 2);
@@ -44252,6 +44256,13 @@ function setProjectColor(s, projectPath, color) {
     perProject: { ...s.perProject, [projectPath]: { ...cur, color } }
   };
 }
+function setProjectTracking(s, projectPath, on) {
+  const cur = s.perProject[projectPath] ?? {};
+  return {
+    ...s,
+    perProject: { ...s.perProject, [projectPath]: { ...cur, track: on } }
+  };
+}
 function clearFavorites(s) {
   return { ...s, favorites: [] };
 }
@@ -44725,6 +44736,15 @@ function App2({ onDone }) {
       setMode(field);
     },
     onToggleVSCode: () => setValues((v) => ({ ...v, openVSCode: !v.openVSCode })),
+    trackingOn: !!(values2.project && state.perProject[values2.project.path]?.track),
+    onToggleTracking: () => {
+      if (!values2.project)
+        return;
+      const on = !state.perProject[values2.project.path]?.track;
+      const next = setProjectTracking(state, values2.project.path, on);
+      saveState(next);
+      setState(next);
+    },
     onLaunch: () => performLaunch(values2),
     onQuit: () => finish({ kind: "quit" })
   });

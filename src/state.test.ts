@@ -3,6 +3,7 @@ import {
   bumpRecent,
   toggleFavorite,
   setProjectColor,
+  setProjectTracking,
   cycleProjectColor,
   clearRecents,
   clearFavorites,
@@ -108,5 +109,25 @@ describe("countTints", () => {
       },
     };
     expect(countTints(s)).toBe(2);
+  });
+});
+
+describe("setProjectTracking", () => {
+  test("turns tracking on preserving other per-project fields", () => {
+    const s = setProjectTracking(
+      { ...empty(), perProject: { "/a": { color: "#8b4a3a" } } },
+      "/a",
+      true,
+    );
+    expect(s.perProject["/a"].track).toBe(true);
+    expect(s.perProject["/a"].color).toBe("#8b4a3a");
+  });
+  test("turns tracking off", () => {
+    const s = setProjectTracking(
+      { ...empty(), perProject: { "/a": { track: true } } },
+      "/a",
+      false,
+    );
+    expect(s.perProject["/a"].track).toBe(false);
   });
 });
