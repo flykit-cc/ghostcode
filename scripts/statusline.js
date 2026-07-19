@@ -160,10 +160,19 @@ function limitSeg(label, o) {
     : p < 80 ? '\x1b[38;2;200;170;80m'
     : p < 95 ? '\x1b[38;2;220;150;80m'
     : '\x1b[38;2;210;100;100m';
+  // Always show time-to-reset (↻ = resets in) — knowing when the window
+  // clears matters as much as the percentage itself.
   let reset = '';
-  if (p >= 90 && o.resets_at) {
-    const d = new Date(o.resets_at * 1000);
-    reset = ` ↻${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  if (o.resets_at) {
+    const ms = o.resets_at * 1000 - Date.now();
+    if (ms > 0) {
+      const m = Math.ceil(ms / 60000);
+      const rel =
+        m < 60 ? `${m}m`
+        : m < 24 * 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}m`
+        : `${Math.floor(m / (24 * 60))}d${Math.floor((m % (24 * 60)) / 60)}h`;
+      reset = `\x1b[0m\x1b[2m ↻${rel}\x1b[0m`;
+    }
   }
   return `${col}${label} ${p}%${reset}\x1b[0m`;
 }
