@@ -44,7 +44,8 @@ Everything else (Ghostty, Claude Code) is installed by the first-run wizard.
 ## Install
 
 ```bash
-npm install -g @flykit/ghostcode
+git clone https://github.com/flykit-cc/ghostcode.git
+npm install -g ./ghostcode
 ```
 
 Then open Ghostty. The first-run wizard launches automatically and wires Ghostty to run GhostCode on every new window. On subsequent launches, you go straight to the picker.
