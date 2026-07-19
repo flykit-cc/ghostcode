@@ -140,6 +140,27 @@ else
   ok "Kept existing statusline"
 fi
 
+# ── Step: Work tracker hooks ───────────────────────────────────────────
+section "Work tracker"
+
+HOOK_CMD="node $REPO_ROOT/dist/tracker-hook.js"
+node -e "
+  const fs = require('fs');
+  const p = '$CC_SETTINGS';
+  const j = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {};
+  j.hooks = j.hooks || {};
+  let changed = false;
+  for (const ev of ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'Stop']) {
+    const arr = j.hooks[ev] = j.hooks[ev] || [];
+    const present = arr.some(g => (g.hooks || []).some(h => h.command === '$HOOK_CMD'));
+    if (!present) {
+      arr.push({ hooks: [{ type: 'command', command: '$HOOK_CMD', timeout: 5 }] });
+      changed = true;
+    }
+  }
+  if (changed) fs.writeFileSync(p, JSON.stringify(j, null, 2));
+" && ok "Tracker hooks wired (opt-in per project — press W in ghostcode)"
+
 # ── Done ───────────────────────────────────────────────────────────────
 touch "$MARKER"
 printf "\n\033[1;32m✓ GhostCode setup complete\033[0m\n"

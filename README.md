@@ -34,6 +34,7 @@ Add your own in `~/.config/ghostcode/providers.json` — any OpenAI-compatible e
 - **Any LLM as a backend** — GLM, Kimi, Qwen, DeepSeek, MiniMax, NVIDIA NIM, self-hosted, or any OpenAI-compatible endpoint; keys in Keychain
 - **First-run wizard** — installs Ghostty if missing, wires Ghostty config, wires the CC statusline. Aborts cleanly if you skip.
 - **`claude update` on every launch** — always ships you the latest
+- **Work tracker** — opt-in per project (`W` on the Dashboard): tracks attended time, agent time, and tokens per session, with a spoken idle countdown. `ghostcode report --week --csv` exports client-ready totals.
 
 ![Provider picker](assets/screenshots/provider-picker.png)
 
