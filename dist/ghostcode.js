@@ -37380,6 +37380,184 @@ var require_stack_utils = __commonJS((exports, module) => {
   module.exports = StackUtils;
 });
 
+// src/tracker/log.ts
+import { homedir as homedir7 } from "node:os";
+import { join as join9 } from "node:path";
+var TRACKER_DIR;
+var init_log = __esm(() => {
+  TRACKER_DIR = join9(homedir7(), ".config/ghostcode/tracker");
+});
+
+// src/tracker/report.ts
+import { basename as basename3 } from "node:path";
+function aggregateEvents(lines) {
+  const events = [];
+  for (const l of lines) {
+    try {
+      const o = JSON.parse(l);
+      if (o && o.event && o.session_id && o.project)
+        events.push(o);
+    } catch {}
+  }
+  const sessions = new Map;
+  for (const e of events) {
+    let s = sessions.get(e.session_id);
+    if (!s) {
+      s = {
+        date: e.ts.slice(0, 10),
+        project: basename3(e.project),
+        total: null,
+        lastPrompt: null,
+        spanMs: 0,
+        tokens: { input: 0, output: 0, cache_read: 0, cache_write: 0 }
+      };
+      sessions.set(e.session_id, s);
+    }
+    const t = Date.parse(e.ts);
+    if (e.event === "prompt")
+      s.lastPrompt = t;
+    if (e.event === "stop") {
+      if (s.lastPrompt !== null) {
+        s.spanMs += t - s.lastPrompt;
+        s.lastPrompt = null;
+      }
+      if (e.tokens) {
+        s.tokens.input += e.tokens.input;
+        s.tokens.output += e.tokens.output;
+        s.tokens.cache_read += e.tokens.cache_read;
+        s.tokens.cache_write += e.tokens.cache_write;
+      }
+    }
+    if (e.event === "session_total") {
+      s.total = { attended: e.attended_ms ?? 0, agent: e.agent_ms ?? 0 };
+    }
+  }
+  const byKey = new Map;
+  for (const s of sessions.values()) {
+    const key = `${s.date} ${s.project}`;
+    let row = byKey.get(key);
+    if (!row) {
+      row = {
+        date: s.date,
+        project: s.project,
+        attendedMs: 0,
+        agentMs: 0,
+        sessions: 0,
+        tokens: { input: 0, output: 0, cache_read: 0, cache_write: 0 }
+      };
+      byKey.set(key, row);
+    }
+    const attended = s.total ? s.total.attended : s.spanMs;
+    const agent = s.total ? s.total.agent : s.spanMs;
+    row.attendedMs += attended;
+    row.agentMs += agent;
+    row.sessions += 1;
+    row.tokens.input += s.tokens.input;
+    row.tokens.output += s.tokens.output;
+    row.tokens.cache_read += s.tokens.cache_read;
+    row.tokens.cache_write += s.tokens.cache_write;
+  }
+  return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date) || a.project.localeCompare(b.project));
+}
+function fmtDuration(ms) {
+  const min2 = Math.round(ms / 60000);
+  if (min2 < 60)
+    return `${min2}m`;
+  return `${Math.floor(min2 / 60)}h ${min2 % 60}m`;
+}
+function formatTable(rows) {
+  if (rows.length === 0)
+    return `no tracked work in range
+`;
+  const header = ["date", "project", "attended", "agent", "sess", "in", "out", "cached"];
+  const data = rows.map((r) => [
+    r.date,
+    r.project,
+    fmtDuration(r.attendedMs),
+    fmtDuration(r.agentMs),
+    String(r.sessions),
+    fmtTok(r.tokens.input),
+    fmtTok(r.tokens.output),
+    fmtTok(r.tokens.cache_read)
+  ]);
+  const totals = rows.reduce((acc, r) => ({
+    attended: acc.attended + r.attendedMs,
+    agent: acc.agent + r.agentMs,
+    sessions: acc.sessions + r.sessions
+  }), { attended: 0, agent: 0, sessions: 0 });
+  data.push([
+    "total",
+    "",
+    fmtDuration(totals.attended),
+    fmtDuration(totals.agent),
+    String(totals.sessions),
+    "",
+    "",
+    ""
+  ]);
+  const widths = header.map((h, i) => Math.max(h.length, ...data.map((d) => d[i].length)));
+  const line = (cells) => cells.map((c, i) => c.padEnd(widths[i])).join("  ");
+  return [line(header), ...data.map(line)].join(`
+`) + `
+`;
+}
+function toCsv(rows) {
+  const header = "date,project,attended_min,agent_min,sessions,input_tok,output_tok,cache_read_tok,cache_write_tok";
+  const body = rows.map((r) => [
+    r.date,
+    r.project,
+    Math.round(r.attendedMs / 60000),
+    Math.round(r.agentMs / 60000),
+    r.sessions,
+    r.tokens.input,
+    r.tokens.output,
+    r.tokens.cache_read,
+    r.tokens.cache_write
+  ].join(","));
+  return [header, ...body].join(`
+`) + `
+`;
+}
+var fmtTok = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
+var init_report = () => {};
+
+// src/tracker/report-cli.ts
+var exports_report_cli = {};
+__export(exports_report_cli, {
+  runReport: () => runReport
+});
+import { existsSync as existsSync8, readdirSync as readdirSync2, readFileSync as readFileSync6 } from "node:fs";
+import { join as join10 } from "node:path";
+function runReport(argv) {
+  const days = argv.includes("--day") ? 1 : argv.includes("--month") ? 31 : 7;
+  const csv = argv.includes("--csv");
+  const pIdx = argv.indexOf("--project");
+  const projectFilter = pIdx !== -1 ? argv[pIdx + 1] : null;
+  if (!existsSync8(TRACKER_DIR)) {
+    process.stdout.write(`no tracked work yet — toggle tracking with W on a project
+`);
+    return 0;
+  }
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const lines = [];
+  for (const f of readdirSync2(TRACKER_DIR).sort()) {
+    const m = /^events-(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(f);
+    if (!m || m[1] < cutoff)
+      continue;
+    lines.push(...readFileSync6(join10(TRACKER_DIR, f), "utf8").split(`
+`).filter(Boolean));
+  }
+  let rows = aggregateEvents(lines);
+  if (projectFilter)
+    rows = rows.filter((r) => r.project === projectFilter);
+  process.stdout.write(csv ? toCsv(rows) : formatTable(rows));
+  return 0;
+}
+var init_report_cli = __esm(() => {
+  init_log();
+  init_report();
+});
+
 // src/index.tsx
 var import_react32 = __toESM(require_react(), 1);
 
@@ -44745,6 +44923,10 @@ import { spawnSync as spawnSync4 } from "node:child_process";
 if (process.argv.includes("--version") || process.argv.includes("-v")) {
   console.log(package_default.version);
   process.exit(0);
+}
+if (process.argv[2] === "report") {
+  const { runReport: runReport2 } = await Promise.resolve().then(() => (init_report_cli(), exports_report_cli));
+  process.exit(runReport2(process.argv.slice(3)));
 }
 async function main() {
   const outcome = await new Promise((resolve) => {

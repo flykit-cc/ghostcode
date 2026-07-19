@@ -10,6 +10,11 @@ if (process.argv.includes("--version") || process.argv.includes("-v")) {
   process.exit(0);
 }
 
+if (process.argv[2] === "report") {
+  const { runReport } = await import("./tracker/report-cli.ts");
+  process.exit(runReport(process.argv.slice(3)));
+}
+
 async function main() {
   const outcome = await new Promise<Outcome>((resolve) => {
     const { unmount, waitUntilExit } = render(
