@@ -100,13 +100,15 @@ try {
   const input = JSON.parse(readFileSync2(0, "utf8"));
   const cwd = input.cwd || process.cwd();
   let root = cwd;
-  try {
-    root = execSync("git rev-parse --show-toplevel", {
-      cwd,
-      stdio: ["ignore", "pipe", "ignore"],
-      timeout: 1500
-    }).toString().trim() || cwd;
-  } catch {}
+  if (!isTracked(root)) {
+    try {
+      root = execSync("git rev-parse --show-toplevel", {
+        cwd,
+        stdio: ["ignore", "pipe", "ignore"],
+        timeout: 1500
+      }).toString().trim() || cwd;
+    } catch {}
+  }
   if (isTracked(root)) {
     const event = EVENT_MAP[input.hook_event_name];
     if (event) {

@@ -44,7 +44,7 @@ export function aggregateEvents(lines: string[]): ReportRow[] {
     if (!s) {
       s = {
         date: e.ts.slice(0, 10),
-        project: basename(e.project),
+        project: e.project,
         total: null,
         lastPrompt: null,
         spanMs: 0,
@@ -73,12 +73,14 @@ export function aggregateEvents(lines: string[]): ReportRow[] {
 
   const byKey = new Map<string, ReportRow>();
   for (const s of sessions.values()) {
+    // Key on the FULL project path — two projects sharing a folder basename
+    // must never merge into one billing row. Basename is display-only.
     const key = `${s.date} ${s.project}`;
     let row = byKey.get(key);
     if (!row) {
       row = {
         date: s.date,
-        project: s.project,
+        project: basename(s.project),
         attendedMs: 0,
         agentMs: 0,
         sessions: 0,
@@ -117,7 +119,7 @@ const fmtTok = (n: number) =>
 
 export function formatTable(rows: ReportRow[]): string {
   if (rows.length === 0) return "no tracked work in range\n";
-  const header = ["date", "project", "attended", "agent", "sess", "in", "out", "cached"];
+  const header = ["date", "project", "attended", "agent", "sess", "in", "out", "cached", "written"];
   const data = rows.map((r) => [
     r.date,
     r.project,
@@ -127,6 +129,7 @@ export function formatTable(rows: ReportRow[]): string {
     fmtTok(r.tokens.input),
     fmtTok(r.tokens.output),
     fmtTok(r.tokens.cache_read),
+    fmtTok(r.tokens.cache_write),
   ]);
   const totals = rows.reduce(
     (acc, r) => ({
@@ -142,6 +145,7 @@ export function formatTable(rows: ReportRow[]): string {
     fmtDuration(totals.attended),
     fmtDuration(totals.agent),
     String(totals.sessions),
+    "",
     "",
     "",
     "",

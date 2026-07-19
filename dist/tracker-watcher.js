@@ -1,5 +1,5 @@
 // src/tracker/watcher.ts
-import { execSync, spawn } from "node:child_process";
+import { execFileSync, execSync, spawn } from "node:child_process";
 import {
   closeSync,
   existsSync as existsSync2,
@@ -27,7 +27,7 @@ function initialState() {
 }
 function tick(s, p, cfg) {
   const effects = { say: null, chime: false, becameIdle: false, resumed: false };
-  const dt = s.lastNow === null ? 0 : Math.min(p.now - s.lastNow, MAX_TICK_MS);
+  const dt = s.lastNow === null ? 0 : Math.max(0, Math.min(p.now - s.lastNow, MAX_TICK_MS));
   const present = p.frontmost && p.inputIdleSec < cfg.presenceIdleSec;
   let phase;
   let countdownEndsAt = s.countdownEndsAt;
@@ -187,7 +187,9 @@ function frontmostIsGhostty() {
     const asn = execSync("lsappinfo front", { timeout: 1000 }).toString().trim();
     if (!asn)
       return false;
-    const info = execSync(`lsappinfo info -only name ${asn}`, { timeout: 1000 }).toString();
+    const info = execFileSync("lsappinfo", ["info", "-only", "name", asn], {
+      timeout: 1000
+    }).toString();
     return /ghostty/i.test(info);
   } catch {
     return false;

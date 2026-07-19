@@ -14,7 +14,7 @@ export function runReport(argv: string[]): number {
     process.stdout.write("no tracked work yet — toggle tracking with W on a project\n");
     return 0;
   }
-  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const cutoff = new Date(Date.now() - (days - 1) * 86_400_000).toISOString().slice(0, 10);
   const lines: string[] = [];
   for (const f of readdirSync(TRACKER_DIR).sort()) {
     const m = /^events-(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(f);

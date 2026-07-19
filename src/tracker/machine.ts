@@ -43,7 +43,8 @@ export function tick(
   cfg: TrackerConfig,
 ): { state: MachineState; effects: Effects } {
   const effects: Effects = { say: null, chime: false, becameIdle: false, resumed: false };
-  const dt = s.lastNow === null ? 0 : Math.min(p.now - s.lastNow, MAX_TICK_MS);
+  const dt =
+    s.lastNow === null ? 0 : Math.max(0, Math.min(p.now - s.lastNow, MAX_TICK_MS));
   const present = p.frontmost && p.inputIdleSec < cfg.presenceIdleSec;
 
   // Next phase

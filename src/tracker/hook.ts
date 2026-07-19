@@ -20,17 +20,21 @@ const EVENT_MAP: Record<string, string> = {
 try {
   const input = JSON.parse(readFileSync(0, "utf8"));
   const cwd = input.cwd || process.cwd();
+  // Fast path: ghostcode launches CC at the repo root, so cwd usually IS the
+  // tracked key — skip the git subprocess when it matches directly.
   let root = cwd;
-  try {
-    root =
-      execSync("git rev-parse --show-toplevel", {
-        cwd,
-        stdio: ["ignore", "pipe", "ignore"],
-        timeout: 1500,
-      })
-        .toString()
-        .trim() || cwd;
-  } catch {}
+  if (!isTracked(root)) {
+    try {
+      root =
+        execSync("git rev-parse --show-toplevel", {
+          cwd,
+          stdio: ["ignore", "pipe", "ignore"],
+          timeout: 1500,
+        })
+          .toString()
+          .trim() || cwd;
+    } catch {}
+  }
 
   if (isTracked(root)) {
     const event = EVENT_MAP[input.hook_event_name];

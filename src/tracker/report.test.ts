@@ -65,3 +65,15 @@ test("toCsv emits minutes and header", () => {
   );
   expect(csv.split("\n")[1]).toBe("2026-07-19,ghostcode,10,2,1,10,100,500,20");
 });
+
+test("same basename, different paths stay separate rows", () => {
+  const rows = aggregateEvents([
+    ev({ ts: "2026-07-19T10:00:00Z", event: "session_total", session_id: "x", project: "/work/acme/app",
+         attended_ms: 60_000, agent_ms: 0 }),
+    ev({ ts: "2026-07-19T11:00:00Z", event: "session_total", session_id: "y", project: "/side/hobby/app",
+         attended_ms: 60_000, agent_ms: 0 }),
+  ]);
+  expect(rows).toHaveLength(2);
+  expect(rows[0].attendedMs).toBe(60_000);
+  expect(rows[1].attendedMs).toBe(60_000);
+});

@@ -37405,7 +37405,7 @@ function aggregateEvents(lines) {
     if (!s) {
       s = {
         date: e.ts.slice(0, 10),
-        project: basename3(e.project),
+        project: e.project,
         total: null,
         lastPrompt: null,
         spanMs: 0,
@@ -37439,7 +37439,7 @@ function aggregateEvents(lines) {
     if (!row) {
       row = {
         date: s.date,
-        project: s.project,
+        project: basename3(s.project),
         attendedMs: 0,
         agentMs: 0,
         sessions: 0,
@@ -37469,7 +37469,7 @@ function formatTable(rows) {
   if (rows.length === 0)
     return `no tracked work in range
 `;
-  const header = ["date", "project", "attended", "agent", "sess", "in", "out", "cached"];
+  const header = ["date", "project", "attended", "agent", "sess", "in", "out", "cached", "written"];
   const data = rows.map((r) => [
     r.date,
     r.project,
@@ -37478,7 +37478,8 @@ function formatTable(rows) {
     String(r.sessions),
     fmtTok(r.tokens.input),
     fmtTok(r.tokens.output),
-    fmtTok(r.tokens.cache_read)
+    fmtTok(r.tokens.cache_read),
+    fmtTok(r.tokens.cache_write)
   ]);
   const totals = rows.reduce((acc, r) => ({
     attended: acc.attended + r.attendedMs,
@@ -37491,6 +37492,7 @@ function formatTable(rows) {
     fmtDuration(totals.attended),
     fmtDuration(totals.agent),
     String(totals.sessions),
+    "",
     "",
     "",
     ""
@@ -37538,7 +37540,7 @@ function runReport(argv) {
 `);
     return 0;
   }
-  const cutoff = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const cutoff = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
   const lines = [];
   for (const f of readdirSync2(TRACKER_DIR).sort()) {
     const m = /^events-(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(f);

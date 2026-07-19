@@ -2,7 +2,7 @@
 //   argv: sessionId projectRoot transcriptPath parentPid
 // Polls presence every 2s, drives the state machine, plays countdown audio,
 // maintains the live file for the statusline, and flushes session totals.
-import { execSync, spawn } from "node:child_process";
+import { execFileSync, execSync, spawn } from "node:child_process";
 import {
   closeSync,
   existsSync,
@@ -82,7 +82,9 @@ function frontmostIsGhostty(): boolean {
   try {
     const asn = execSync("lsappinfo front", { timeout: 1000 }).toString().trim();
     if (!asn) return false;
-    const info = execSync(`lsappinfo info -only name ${asn}`, { timeout: 1000 }).toString();
+    const info = execFileSync("lsappinfo", ["info", "-only", "name", asn], {
+      timeout: 1000,
+    }).toString();
     return /ghostty/i.test(info);
   } catch {
     return false;
