@@ -167,9 +167,10 @@ function limitSeg(label, o) {
   }
   return `${col}${label} ${p}%${reset}\x1b[0m`;
 }
-const limitsSeg = [limitSeg('5h', rl.five_hour), limitSeg('wk', rl.seven_day)]
+const limitParts = [limitSeg('5h', rl.five_hour), limitSeg('week', rl.seven_day)]
   .filter(Boolean)
   .join(' ');
+const limitsSeg = limitParts ? `\x1b[2mlimits\x1b[0m ${limitParts}` : '';
 
 // Work tracker live timer — shown only when this session's watcher is alive.
 let trackerLabel = '';
