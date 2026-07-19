@@ -17,9 +17,12 @@ Built-in providers out of the box:
 |---|---|
 | Claude | subscription (OAuth) — no key needed |
 | Anthropic | API key — pay-per-token |
-| GLM (Z.ai) | API key — GLM-5.1 and family |
-| Kimi K2 | API key — Moonshot |
-| Qwen3 Coder | API key — DashScope |
+| GLM (Z.ai) | API key — GLM-5.2 and family |
+| Kimi (Moonshot) | API key — K3, K2.7 Code, K2.6 |
+| Qwen (DashScope) | API key — Qwen3 Coder Plus, Qwen3.6 Plus |
+| DeepSeek | API key — Reasoner, Chat |
+| MiniMax | API key — M2.7 |
+| NVIDIA NIM | API key — Llama, Qwen, Nemotron via local translator proxy |
 
 Add your own in `~/.config/ghostcode/providers.json` — any OpenAI-compatible endpoint works.
 
@@ -28,7 +31,7 @@ Add your own in `~/.config/ghostcode/providers.json` — any OpenAI-compatible e
 - **Fuzzy project picker** — type a few chars, starred favorites pinned on top, auto-tracked recents below
 - **Per-project tints** — press `⇧C` to cycle a color; it follows the project into CC's statusline too
 - **Model, effort, mode, provider** — all visible on the Dashboard, saved per-project and globally
-- **Any LLM as a backend** — GLM, Kimi, Qwen, self-hosted, or any OpenAI-compatible endpoint; keys in Keychain
+- **Any LLM as a backend** — GLM, Kimi, Qwen, DeepSeek, MiniMax, NVIDIA NIM, self-hosted, or any OpenAI-compatible endpoint; keys in Keychain
 - **First-run wizard** — installs Ghostty if missing, wires Ghostty config, wires the CC statusline. Aborts cleanly if you skip.
 - **`claude update` on every launch** — always ships you the latest
 

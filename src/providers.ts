@@ -51,6 +51,7 @@ const DEFAULT_PROVIDERS: Provider[] = [
       keychainService: "ghostcode.glm",
     },
     models: [
+      { id: "glm-5.2", label: "GLM-5.2" },
       { id: "glm-5.1", label: "GLM-5.1" },
       { id: "glm-5", label: "GLM-5" },
       { id: "glm-5-turbo", label: "GLM-5-Turbo" },
@@ -61,30 +62,63 @@ const DEFAULT_PROVIDERS: Provider[] = [
   },
   {
     id: "kimi",
-    label: "Kimi K2",
+    label: "Kimi",
     sublabel: "Moonshot",
     env: {
       ANTHROPIC_BASE_URL: "https://api.moonshot.ai/anthropic",
-      ANTHROPIC_MODEL: "kimi-k2-turbo-preview",
     },
     secret: {
       envVar: "ANTHROPIC_AUTH_TOKEN",
       keychainService: "ghostcode.kimi",
     },
+    models: [
+      { id: "kimi-k3", label: "Kimi K3" },
+      { id: "kimi-k2.7-code", label: "Kimi K2.7 Code" },
+      { id: "kimi-k2.7-code-highspeed", label: "Kimi K2.7 Code Highspeed" },
+      { id: "kimi-k2.6", label: "Kimi K2.6" },
+    ],
   },
   {
     id: "qwen",
-    label: "Qwen3 Coder",
+    label: "Qwen",
     sublabel: "DashScope",
     env: {
       ANTHROPIC_BASE_URL:
         "https://dashscope-intl.aliyuncs.com/api/v2/apps/claude-code-proxy/v1",
-      ANTHROPIC_MODEL: "qwen3-coder-plus",
     },
     secret: {
       envVar: "ANTHROPIC_AUTH_TOKEN",
       keychainService: "ghostcode.qwen",
     },
+    models: [
+      { id: "qwen3-coder-plus", label: "Qwen3 Coder Plus" },
+      { id: "qwen3.6-plus", label: "Qwen3.6 Plus" },
+    ],
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    sublabel: "DeepSeek API",
+    env: { ANTHROPIC_BASE_URL: "https://api.deepseek.com/anthropic" },
+    secret: {
+      envVar: "ANTHROPIC_AUTH_TOKEN",
+      keychainService: "ghostcode.deepseek",
+    },
+    models: [
+      { id: "deepseek-reasoner", label: "DeepSeek Reasoner" },
+      { id: "deepseek-chat", label: "DeepSeek Chat" },
+    ],
+  },
+  {
+    id: "minimax",
+    label: "MiniMax",
+    sublabel: "minimax.io",
+    env: { ANTHROPIC_BASE_URL: "https://api.minimax.io/anthropic" },
+    secret: {
+      envVar: "ANTHROPIC_AUTH_TOKEN",
+      keychainService: "ghostcode.minimax",
+    },
+    models: [{ id: "minimax-m2.7", label: "MiniMax M2.7" }],
   },
   {
     id: "nvidia",
