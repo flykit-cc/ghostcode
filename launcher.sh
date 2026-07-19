@@ -36,4 +36,4 @@ if [ -z "$NODE" ]; then
   exec zsh
 fi
 
-exec "$NODE" "$SCRIPT_DIR/dist/ghostcode.js"
+exec "$NODE" "$SCRIPT_DIR/dist/ghostcode.js" "$@"
