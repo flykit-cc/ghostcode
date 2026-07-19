@@ -130,6 +130,29 @@ if (isClaude) {
   }
 }
 
+// Session token totals + plan usage limits (subscription rate-limit windows).
+const totIn = ctxInfo.total_input_tokens || 0;
+const totOut = ctxInfo.total_output_tokens || 0;
+const rl = input.rate_limits || {};
+function limitSeg(label, o) {
+  if (!o || o.used_percentage == null) return '';
+  const p = Math.max(0, Math.min(100, Math.round(o.used_percentage)));
+  const col =
+    p < 50 ? '\x1b[38;2;120;180;120m'
+    : p < 80 ? '\x1b[38;2;200;170;80m'
+    : p < 95 ? '\x1b[38;2;220;150;80m'
+    : '\x1b[38;2;210;100;100m';
+  let reset = '';
+  if (p >= 90 && o.resets_at) {
+    const d = new Date(o.resets_at * 1000);
+    reset = ` ↻${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  return `${col}${label} ${p}%${reset}\x1b[0m`;
+}
+const limitsSeg = [limitSeg('5h', rl.five_hour), limitSeg('wk', rl.seven_day)]
+  .filter(Boolean)
+  .join(' ');
+
 // Work tracker live timer — shown only when this session's watcher is alive.
 let trackerLabel = '';
 try {
@@ -242,7 +265,9 @@ if (isClaude) {
           return dim(` ${sentFrac} · ↓ ${fmtTokens(lastOutput)}`);
         })()
       : '';
-  const segs = [statsSegment, ttlLabel, trackerLabel].filter(Boolean);
+  const totalsSeg =
+    totIn || totOut ? dim(`Σ ↑${fmtTokens(totIn)} ↓${fmtTokens(totOut)}`) : '';
+  const segs = [statsSegment, totalsSeg, ttlLabel, trackerLabel, limitsSeg].filter(Boolean);
   if (segs.length) row2 = (statsSegment ? '' : ' ') + segs.join(' · ');
 }
 
