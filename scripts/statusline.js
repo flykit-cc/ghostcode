@@ -92,7 +92,9 @@ if (fs.existsSync('/Applications/Visual Studio Code.app')) {
 let ttlLabel = '';
 if (isClaude) {
   let idleMs = 0;
-  let ttl = 5 * 60 * 1000;
+  // 0 = unknown (no cache_creation entry seen yet) — hide the pill rather
+  // than guess a TTL that's wrong half the time.
+  let ttl = 0;
   if (transcriptPath && fs.existsSync(transcriptPath)) {
     try { idleMs = Date.now() - fs.statSync(transcriptPath).mtimeMs; } catch {}
     try {
@@ -116,17 +118,19 @@ if (isClaude) {
       }
     } catch {}
   }
-  const warnMs = ttl >= 60 * 60 * 1000 ? 5 * 60_000 : 60_000;
-  const fmtMMSS = (ms) => {
-    const s = Math.max(0, Math.floor(ms / 1000));
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  };
-  if (idleMs < ttl - warnMs) {
-    ttlLabel = `\x1b[38;2;120;180;120mttl ${fmtMMSS(ttl - idleMs)}\x1b[0m`;
-  } else if (idleMs < ttl) {
-    ttlLabel = `\x1b[38;2;200;170;80mttl ${fmtMMSS(ttl - idleMs)}\x1b[0m`;
-  } else {
-    ttlLabel = `\x1b[2mttl expired ${fmtMMSS(idleMs - ttl)}\x1b[0m`;
+  if (ttl > 0) {
+    const warnMs = ttl >= 60 * 60 * 1000 ? 5 * 60_000 : 60_000;
+    const fmtMMSS = (ms) => {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    };
+    if (idleMs < ttl - warnMs) {
+      ttlLabel = `\x1b[38;2;120;180;120mttl ${fmtMMSS(ttl - idleMs)}\x1b[0m`;
+    } else if (idleMs < ttl) {
+      ttlLabel = `\x1b[38;2;200;170;80mttl ${fmtMMSS(ttl - idleMs)}\x1b[0m`;
+    } else {
+      ttlLabel = `\x1b[2mttl expired ${fmtMMSS(idleMs - ttl)}\x1b[0m`;
+    }
   }
 }
 
