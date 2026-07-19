@@ -42942,7 +42942,7 @@ var package_default = {
   ],
   scripts: {
     start: "bun run src/index.tsx",
-    build: "bun build src/index.tsx --target=node --format=esm --outfile=dist/ghostcode.js && bun build src/nvidia/proxy.ts --target=node --format=esm --outfile=dist/nvidia-proxy.js",
+    build: "bun build src/index.tsx --target=node --format=esm --outfile=dist/ghostcode.js && bun build src/nvidia/proxy.ts --target=node --format=esm --outfile=dist/nvidia-proxy.js && bun build src/tracker/hook.ts --target=node --format=esm --outfile=dist/tracker-hook.js && bun build src/tracker/watcher.ts --target=node --format=esm --outfile=dist/tracker-watcher.js",
     prepublishOnly: "bun run build",
     test: "bun test",
     init: "./scripts/init.sh"
