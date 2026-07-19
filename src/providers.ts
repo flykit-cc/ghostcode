@@ -15,6 +15,9 @@ export type Provider = {
   // Non-Claude providers with a selectable model list. Sets ANTHROPIC_MODEL.
   // First item is the default.
   models?: ProviderModel[];
+  // Marks providers that need a local translator proxy started before launch.
+  // The launcher knows how to start each by id.
+  proxy?: "nvidia";
 };
 
 const CONFIG_PATH = join(homedir(), ".config/ghostcode/providers.json");
@@ -83,12 +86,91 @@ const DEFAULT_PROVIDERS: Provider[] = [
       keychainService: "ghostcode.qwen",
     },
   },
+  {
+    id: "nvidia",
+    label: "NVIDIA NIM",
+    sublabel: "via local translator proxy",
+    // ANTHROPIC_BASE_URL is filled in at launch time once the proxy
+    // has bound a free port. The key is read from Keychain and forwarded
+    // to the proxy as NVIDIA_API_KEY (NOT as an Anthropic auth token).
+    env: {},
+    secret: {
+      envVar: "NVIDIA_API_KEY",
+      keychainService: "ghostcode.nvidia",
+    },
+    proxy: "nvidia",
+    // Pruned to models verified working with the standard NVIDIA developer
+    // key. DeepSeek V3.1+/V4, Mistral, smaller Qwen, and Nemotron Ultra all
+    // either 404 ("function not provisioned for account") or silently hang
+    // because the account lacks entitlement. Re-add them by hand if your
+    // org has access. First entry is the wizard default.
+    models: [
+      {
+        id: "qwen/qwen3-coder-480b-a35b-instruct",
+        label: "Qwen3 Coder 480B",
+      },
+      { id: "meta/llama-3.3-70b-instruct", label: "Llama 3.3 70B Instruct" },
+      {
+        id: "meta/llama-3.1-405b-instruct",
+        label: "Llama 3.1 405B Instruct",
+      },
+      { id: "meta/llama-3.1-70b-instruct", label: "Llama 3.1 70B Instruct" },
+      {
+        id: "qwen/qwen3-next-80b-a3b-thinking",
+        label: "Qwen3 Next 80B Thinking",
+      },
+      {
+        id: "nvidia/llama-3.3-nemotron-super-49b-v1",
+        label: "Nemotron Super 49B",
+      },
+    ],
+  },
 ];
+
+// Merge built-in updates into the user's file:
+//   - Append built-in providers missing entirely from the user's file.
+//   - For built-in providers the user has, append any new built-in models
+//     not present by id. User-added models and reordering are preserved;
+//     models the user explicitly removed stay removed only if they're not
+//     in the built-in list (we re-add new built-ins, never re-add ones the
+//     user removed and that no longer ship by default).
+function mergeBuiltins(user: Provider[]): {
+  merged: Provider[];
+  changed: boolean;
+} {
+  let changed = false;
+  const builtinById = new Map(DEFAULT_PROVIDERS.map((p) => [p.id, p]));
+  const merged = user.map((p) => {
+    const builtin = builtinById.get(p.id);
+    if (!builtin || !builtin.models?.length) return p;
+    const userModelIds = new Set(p.models?.map((m) => m.id) ?? []);
+    const newModels = builtin.models.filter((m) => !userModelIds.has(m.id));
+    if (newModels.length === 0) return p;
+    changed = true;
+    return { ...p, models: [...(p.models ?? []), ...newModels] };
+  });
+  const haveIds = new Set(user.map((p) => p.id));
+  const missingProviders = DEFAULT_PROVIDERS.filter((p) => !haveIds.has(p.id));
+  if (missingProviders.length > 0) {
+    changed = true;
+    merged.push(...missingProviders);
+  }
+  return { merged, changed };
+}
 
 export function loadProviders(): Provider[] {
   if (existsSync(CONFIG_PATH)) {
     try {
-      return JSON.parse(readFileSync(CONFIG_PATH, "utf8")) as Provider[];
+      const user = JSON.parse(readFileSync(CONFIG_PATH, "utf8")) as Provider[];
+      const { merged, changed } = mergeBuiltins(user);
+      if (changed) {
+        try {
+          writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2));
+        } catch {
+          // best-effort persist; runtime list is still correct
+        }
+      }
+      return merged;
     } catch {
       // fall through to defaults if the file is malformed
     }

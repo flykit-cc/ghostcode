@@ -45,17 +45,16 @@ async function main() {
   if (!values.project) {
     process.exit(0);
   }
-  process.exit(
-    runLaunch({
-      projectPath: values.project.path,
-      provider: values.provider,
-      secretValue,
-      model: values.model,
-      effort: values.effort,
-      mode: values.mode,
-      openVSCode: values.openVSCode,
-    }),
-  );
+  const code = await runLaunch({
+    projectPath: values.project.path,
+    provider: values.provider,
+    secretValue,
+    model: values.model,
+    effort: values.effort,
+    mode: values.mode,
+    openVSCode: values.openVSCode,
+  });
+  process.exit(code);
 }
 
 main();

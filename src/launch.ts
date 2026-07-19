@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { getSecret } from "./keychain.ts";
 import type { Provider } from "./providers.ts";
+import { spawnNvidiaProxy, type ProxyHandle } from "./nvidia/spawn.ts";
 
 export type PermissionMode =
   | "bypassPermissions"
@@ -21,7 +22,7 @@ export type LaunchPlan = {
   openVSCode: boolean;
 };
 
-export function runLaunch(plan: LaunchPlan): number {
+export async function runLaunch(plan: LaunchPlan): Promise<number> {
   const check = spawnSync("command", ["-v", "claude"], { encoding: "utf8" });
   if (check.status !== 0 || !check.stdout.trim()) {
     process.stderr.write(
@@ -68,6 +69,35 @@ export function runLaunch(plan: LaunchPlan): number {
   spawnSync("claude", ["update"], { stdio: "inherit", timeout: 15000 });
   process.stdout.write("\n");
 
+  // For providers with a proxy: start it after `claude update` so a slow
+  // update doesn't hold an idle port. Sets ANTHROPIC_BASE_URL to the proxy
+  // and scrubs NVIDIA_API_KEY from the env claude inherits.
+  let proxy: ProxyHandle | null = null;
+  if (plan.provider.proxy === "nvidia") {
+    if (!plan.secretValue) {
+      process.stderr.write(
+        "\x1b[31mNVIDIA_API_KEY missing.\x1b[0m Set it via Settings → API keys.\n",
+      );
+      return 1;
+    }
+    process.stdout.write("\x1b[90m$ nvidia-proxy starting...\x1b[0m\n");
+    try {
+      proxy = await spawnNvidiaProxy({ apiKey: plan.secretValue });
+    } catch (e) {
+      process.stderr.write(
+        `\x1b[31mnvidia-proxy failed to start:\x1b[0m ${(e as Error).message}\n`,
+      );
+      return 1;
+    }
+    process.stdout.write(
+      `\x1b[90m$ nvidia-proxy listening on 127.0.0.1:${proxy.port}\x1b[0m\n`,
+    );
+    env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${proxy.port}`;
+    // Claude Code requires ANTHROPIC_AUTH_TOKEN; the proxy ignores it.
+    env.ANTHROPIC_AUTH_TOKEN = "ghostcode-nvidia-proxy";
+    delete env.NVIDIA_API_KEY;
+  }
+
   const banner = `\x1b[90m$ claude ${args.join(" ")}\x1b[0m\n`;
   process.stdout.write(banner);
 
@@ -76,6 +106,11 @@ export function runLaunch(plan: LaunchPlan): number {
     env,
     cwd: plan.projectPath,
   });
+
+  // Tear down the proxy before dropping into the user's shell so the port
+  // doesn't linger past the Claude session.
+  if (proxy) proxy.stop();
+
   const zsh = spawnSync("zsh", [], {
     stdio: "inherit",
     env,

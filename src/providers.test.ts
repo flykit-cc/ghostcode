@@ -39,15 +39,34 @@ describe("loadProviders", () => {
     expect(providers[0].id).toBe("claude-oauth");
   });
 
-  test("uses config contents when valid", () => {
+  test("uses config contents and merges in missing built-ins", () => {
+    mkdirSync(CONFIG_DIR, { recursive: true });
+    writeFileSync(
+      CONFIG_PATH,
+      JSON.stringify([{ id: "custom", label: "Custom", env: {} }]),
+    );
+    const providers = loadProviders();
+    // Custom entry is preserved at its original position.
+    expect(providers[0]).toEqual({ id: "custom", label: "Custom", env: {} });
+    // Built-ins missing from the user's file are appended so newly-added
+    // vendors show up without forcing a config wipe.
+    const ids = providers.map((p) => p.id);
+    expect(ids).toContain("nvidia");
+    expect(ids).toContain("claude-oauth");
+  });
+
+  test("does not duplicate built-ins already present", () => {
     mkdirSync(CONFIG_DIR, { recursive: true });
     writeFileSync(
       CONFIG_PATH,
       JSON.stringify([
-        { id: "custom", label: "Custom", env: {} },
+        { id: "claude-oauth", label: "Claude (mine)", env: {} },
       ]),
     );
     const providers = loadProviders();
-    expect(providers).toEqual([{ id: "custom", label: "Custom", env: {} }]);
+    const claudeEntries = providers.filter((p) => p.id === "claude-oauth");
+    expect(claudeEntries).toHaveLength(1);
+    // User's customization wins: their label, not the built-in default.
+    expect(claudeEntries[0].label).toBe("Claude (mine)");
   });
 });
