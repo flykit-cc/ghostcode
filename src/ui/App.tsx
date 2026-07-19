@@ -157,11 +157,13 @@ export function App({ onDone }: Props) {
     };
   });
 
-  const [mode, setMode] = useState<Mode>("dashboard");
+  // Open in wizard mode: project → provider → model → dashboard. Each step
+  // pre-selects the last-used value, so a returning user just hits Enter
+  // three times to relaunch with the previous setup.
+  const [mode, setMode] = useState<Mode>("project");
+  const [wizardActive, setWizardActive] = useState(true);
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
-  const [dashFocus, setDashFocus] = useState<DashFocus>(
-    initialProject ? "launch" : "project",
-  );
+  const [dashFocus, setDashFocus] = useState<DashFocus>("launch");
   const [settingsIndex, setSettingsIndex] = useState(0);
   const [confirmSpec, setConfirmSpec] = useState<ConfirmSpec | null>(null);
   // Bump to force re-render of lists that depend on external keychain state
@@ -315,8 +317,12 @@ export function App({ onDone }: Props) {
         getColor={(path) => state.perProject[path]?.color}
         onPick={(p) => {
           applyProjectDefaults(p);
-          setDashFocus("project");
-          setMode("dashboard");
+          if (wizardActive) {
+            setMode("provider");
+          } else {
+            setDashFocus("project");
+            setMode("dashboard");
+          }
         }}
         onToggleFavorite={(p) => {
           const next = toggleFavorite(state, p.path);
@@ -337,6 +343,7 @@ export function App({ onDone }: Props) {
           // If there's already a project, ESC returns to dashboard.
           // If nothing is picked and we have no project, quit to shell.
           if (values.project) {
+            setWizardActive(false);
             setDashFocus("project");
             setMode("dashboard");
           } else {
@@ -373,10 +380,24 @@ export function App({ onDone }: Props) {
             return;
           }
           setValues((v) => ({ ...v, provider, model: "" }));
-          setDashFocus("provider");
-          setMode("dashboard");
+          if (wizardActive) {
+            // Advance to model picker only if there's a meaningful list
+            // for this provider; otherwise the wizard is done.
+            const items = modelItems(provider);
+            if (items.length > 0) {
+              setMode("model");
+            } else {
+              setWizardActive(false);
+              setDashFocus("launch");
+              setMode("dashboard");
+            }
+          } else {
+            setDashFocus("provider");
+            setMode("dashboard");
+          }
         }}
         onCancel={() => {
+          if (wizardActive) setWizardActive(false);
           setDashFocus("provider");
           setMode("dashboard");
         }}
@@ -386,17 +407,28 @@ export function App({ onDone }: Props) {
 
   if (mode === "model") {
     const items = modelItems(values.provider);
+    // Empty model id means "default": pre-select the first item so the user
+    // sees a real selection (matters for non-Claude providers where every
+    // item has a concrete id).
+    const initialId =
+      values.model || (values.provider.supportsClaudeFlags ? "" : items[0]?.id);
     return (
       <ListPicker
         title="Model"
         items={items}
-        initialId={values.model}
+        initialId={initialId}
         onPick={(item) => {
           setValues((v) => ({ ...v, model: item.id }));
-          setDashFocus("model");
+          if (wizardActive) {
+            setWizardActive(false);
+            setDashFocus("launch");
+          } else {
+            setDashFocus("model");
+          }
           setMode("dashboard");
         }}
         onCancel={() => {
+          if (wizardActive) setWizardActive(false);
           setDashFocus("model");
           setMode("dashboard");
         }}
@@ -516,18 +548,34 @@ export function App({ onDone }: Props) {
         onSubmit={(v) => {
           setSecret(pendingProvider.secret!.keychainService, v);
           setSecretsRev((r) => r + 1);
-          const nextValues = { ...values, provider: pendingProvider };
+          const nextValues = {
+            ...values,
+            provider: pendingProvider,
+            model: "",
+          };
           setValues(nextValues);
           setPendingProvider(null);
-          setDashFocus("provider");
-          if (nextValues.project) {
-            performLaunch(nextValues);
+          if (wizardActive) {
+            const items = modelItems(pendingProvider);
+            if (items.length > 0) {
+              setMode("model");
+            } else {
+              setWizardActive(false);
+              setDashFocus("launch");
+              setMode("dashboard");
+            }
           } else {
-            setMode("dashboard");
+            setDashFocus("provider");
+            if (nextValues.project) {
+              performLaunch(nextValues);
+            } else {
+              setMode("dashboard");
+            }
           }
         }}
         onCancel={() => {
           setPendingProvider(null);
+          if (wizardActive) setWizardActive(false);
           setDashFocus("provider");
           setMode("dashboard");
         }}
