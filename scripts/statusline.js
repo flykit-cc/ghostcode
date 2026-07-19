@@ -105,6 +105,20 @@ if (isClaude) {
       fs.readSync(fd, buf, 0, len, size - len);
       fs.closeSync(fd);
       const tail = buf.toString('utf8');
+      // Anchor the countdown on the last real API response, not file mtime —
+      // local appends (recaps, summaries, hook notes) touch the file without
+      // refreshing the cache. Sidechain (subagent) turns use a different
+      // prompt prefix, so they don't refresh this session's cache either.
+      const lines = tail.split('\n');
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (!lines[i].includes('"usage"')) continue;
+        if (lines[i].includes('"isSidechain":true')) continue;
+        const t = /"timestamp":"([^"]+)"/.exec(lines[i]);
+        if (t) {
+          const ms = Date.parse(t[1]);
+          if (ms) { idleMs = Date.now() - ms; break; }
+        }
+      }
       const entries = tail.match(/"cache_creation":\{[^}]*\}/g) || [];
       for (let i = entries.length - 1; i >= 0; i--) {
         const h = /"ephemeral_1h_input_tokens":(\d+)/.exec(entries[i]);
