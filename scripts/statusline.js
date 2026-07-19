@@ -130,6 +130,25 @@ if (isClaude) {
   }
 }
 
+// Work tracker live timer — shown only when this session's watcher is alive.
+let trackerLabel = '';
+try {
+  const sessionId = input.session_id || '';
+  if (sessionId) {
+    const livePath = path.join(os.homedir(), '.config/ghostcode/tracker/live', `${sessionId}.json`);
+    if (fs.existsSync(livePath)) {
+      const live = JSON.parse(fs.readFileSync(livePath, 'utf8'));
+      if (Date.now() - (live.updated || 0) < 10_000) {
+        const min = Math.round((live.attended_ms || 0) / 60000);
+        const t = min < 60 ? `${min}m` : `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`;
+        trackerLabel = live.state === 'countdown'
+          ? `\x1b[38;2;200;170;80m⏱ ${t}\x1b[0m`
+          : `\x1b[2m⏱ ${t}\x1b[0m`;
+      }
+    }
+  }
+} catch {}
+
 // Issue numbers — branch name + recent commit messages on this branch.
 function getIssueNumbers() {
   const nums = [];
@@ -223,9 +242,8 @@ if (isClaude) {
           return dim(` ${sentFrac} · ↓ ${fmtTokens(lastOutput)}`);
         })()
       : '';
-  if (statsSegment && ttlLabel) row2 = `${statsSegment} · ${ttlLabel}`;
-  else if (statsSegment) row2 = statsSegment;
-  else if (ttlLabel) row2 = ' ' + ttlLabel;
+  const segs = [statsSegment, ttlLabel, trackerLabel].filter(Boolean);
+  if (segs.length) row2 = (statsSegment ? '' : ' ') + segs.join(' · ');
 }
 
 process.stdout.write(row1 + '\n' + (row2 ? row2 + '\n' : ''));
