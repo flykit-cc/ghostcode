@@ -11,7 +11,8 @@ import {
   unlinkSync,
   writeFileSync as writeFileSync2
 } from "node:fs";
-import { dirname } from "node:path";
+import { basename, dirname, join as join2 } from "node:path";
+import { homedir as homedir2 } from "node:os";
 
 // src/tracker/machine.ts
 var MAX_TICK_MS = 1e4;
@@ -256,8 +257,74 @@ function chime() {
     }).unref();
   } catch {}
 }
+var XI_KEY = process.env.ELEVENLABS_API_KEY || "";
+var XI_VOICE = process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
+var AUDIO_DIR = join2(homedir2(), ".config/ghostcode/tracker/audio");
+var projectName = basename(projectRoot);
+var slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+var warnClip = join2(AUDIO_DIR, `${slug}-going-idle.mp3`);
+var idleClip = join2(AUDIO_DIR, `${slug}-is-idle.mp3`);
+var digitClip = (n) => join2(AUDIO_DIR, `digit-${n}.mp3`);
+async function xiGenerate(text, outPath) {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${XI_VOICE}`, {
+    method: "POST",
+    headers: { "xi-api-key": XI_KEY, "content-type": "application/json" },
+    body: JSON.stringify({ text, model_id: "eleven_multilingual_v2" })
+  });
+  if (!res.ok)
+    throw new Error(`elevenlabs ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  writeFileSync2(outPath, buf);
+}
+async function ensureAudioClips() {
+  if (!XI_KEY || !cfg.audio)
+    return;
+  try {
+    mkdirSync2(AUDIO_DIR, { recursive: true });
+    const wanted = [
+      [warnClip, `${projectName} going idle in 1 minute`],
+      [idleClip, `${projectName} is idle`],
+      ...["5", "4", "3", "2", "1"].map((n) => [digitClip(n), n])
+    ];
+    for (const [path, text] of wanted) {
+      if (existsSync2(path))
+        continue;
+      await xiGenerate(text, path);
+    }
+  } catch (e) {
+    debugLog(`ensureAudioClips: ${e}`);
+  }
+}
+function playClip(path) {
+  if (!cfg.audio)
+    return true;
+  if (!existsSync2(path))
+    return false;
+  try {
+    spawn("afplay", [path], { detached: true, stdio: "ignore" }).unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+function speak(text) {
+  if (/^going idle/.test(text)) {
+    if (playClip(warnClip))
+      return;
+  } else if (/^[1-5]$/.test(text)) {
+    if (playClip(digitClip(text)))
+      return;
+  }
+  say(`${text}`);
+}
+function announceIdle() {
+  if (playClip(idleClip))
+    return;
+  chime();
+}
 var state = initialState();
 var done = false;
+ensureAudioClips();
 var prevFrontmost = true;
 function shutdown() {
   if (done)
@@ -311,9 +378,9 @@ setInterval(() => {
     }, cfg);
     state = r.state;
     if (r.effects.say)
-      say(r.effects.say);
+      speak(r.effects.say);
     if (r.effects.chime)
-      chime();
+      announceIdle();
     if (r.effects.becameIdle)
       appendEvent({ event: "idle_start", session_id: sessionId, project: projectRoot });
     if (r.effects.resumed)

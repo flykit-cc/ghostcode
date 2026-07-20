@@ -14,7 +14,8 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { dirname } from "node:path";
+import { basename, dirname, join } from "node:path";
+import { homedir } from "node:os";
 import { initialState, tick, type MachineState } from "./machine.ts";
 import { appendEvent, debugLog, eventsPathFor, livePathFor, readTrackerConfig } from "./log.ts";
 
@@ -173,8 +174,86 @@ function chime(): void {
   } catch {}
 }
 
+// ── ElevenLabs voice lines — generated once, cached forever ─────────────
+// Per-project: "<project> going idle in 1 minute", "<project> is idle".
+// Shared across projects: digits 5..1. Generated on watcher start when the
+// key is present; playback falls back to `say`/chime while (or if) files
+// don't exist, so audio never goes silent.
+const XI_KEY = process.env.ELEVENLABS_API_KEY || "";
+const XI_VOICE = process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM"; // Rachel
+const AUDIO_DIR = join(homedir(), ".config/ghostcode/tracker/audio");
+const projectName = basename(projectRoot);
+const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+const warnClip = join(AUDIO_DIR, `${slug}-going-idle.mp3`);
+const idleClip = join(AUDIO_DIR, `${slug}-is-idle.mp3`);
+const digitClip = (n: string) => join(AUDIO_DIR, `digit-${n}.mp3`);
+
+async function xiGenerate(text: string, outPath: string): Promise<void> {
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${XI_VOICE}`,
+    {
+      method: "POST",
+      headers: { "xi-api-key": XI_KEY, "content-type": "application/json" },
+      body: JSON.stringify({ text, model_id: "eleven_multilingual_v2" }),
+    },
+  );
+  if (!res.ok) throw new Error(`elevenlabs ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  writeFileSync(outPath, buf);
+}
+
+async function ensureAudioClips(): Promise<void> {
+  if (!XI_KEY || !cfg.audio) return;
+  try {
+    mkdirSync(AUDIO_DIR, { recursive: true });
+    const wanted: Array<[string, string]> = [
+      [warnClip, `${projectName} going idle in 1 minute`],
+      [idleClip, `${projectName} is idle`],
+      ...["5", "4", "3", "2", "1"].map(
+        (n) => [digitClip(n), n] as [string, string],
+      ),
+    ];
+    for (const [path, text] of wanted) {
+      if (existsSync(path)) continue;
+      await xiGenerate(text, path); // sequential — gentle on rate limits
+    }
+  } catch (e) {
+    debugLog(`ensureAudioClips: ${e}`);
+  }
+}
+
+function playClip(path: string): boolean {
+  if (!cfg.audio) return true; // audio disabled — swallow silently
+  if (!existsSync(path)) return false;
+  try {
+    spawn("afplay", [path], { detached: true, stdio: "ignore" }).unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function speak(text: string): void {
+  // Map machine speech to cached clips; fall back to macOS `say`.
+  if (/^going idle/.test(text)) {
+    if (playClip(warnClip)) return;
+  } else if (/^[1-5]$/.test(text)) {
+    if (playClip(digitClip(text))) return;
+  }
+  say(`${text}`);
+}
+
+function announceIdle(): void {
+  if (playClip(idleClip)) return;
+  chime();
+}
+
 let state: MachineState = initialState();
 let done = false;
+
+// Pre-generate this project's voice clips in the background (no-op when they
+// already exist or no ELEVENLABS_API_KEY is set).
+void ensureAudioClips();
 
 // Space-switch animations make `lsappinfo front` report another app for a
 // single poll even though the user never left. Require TWO consecutive
@@ -246,8 +325,8 @@ setInterval(() => {
       cfg,
     );
     state = r.state;
-    if (r.effects.say) say(r.effects.say);
-    if (r.effects.chime) chime();
+    if (r.effects.say) speak(r.effects.say);
+    if (r.effects.chime) announceIdle();
     if (r.effects.becameIdle)
       appendEvent({ event: "idle_start", session_id: sessionId, project: projectRoot });
     if (r.effects.resumed)

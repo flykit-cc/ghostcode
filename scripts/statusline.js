@@ -282,6 +282,7 @@ const row1Parts = [pillSegment, modelSegment];
 if (branch) row1Parts.push(branch);
 if (issueBlock) row1Parts.push(issueBlock);
 row1Parts.push(barField);
+if (trackerLabel) row1Parts.push(trackerLabel);
 const row1 = row1Parts.join(` ${sep} `);
 
 // Row 2 — last turn stats + ttl. Claude-only (others don't expose cache_read).
@@ -301,7 +302,7 @@ if (isClaude) {
       : '';
   const totalsSeg =
     totIn || totOut ? dim(`Σ ↑${fmtTokens(totIn)} ↓${fmtTokens(totOut)}`) : '';
-  const segs = [statsSegment, totalsSeg, ttlLabel, trackerLabel, limitsSeg].filter(Boolean);
+  const segs = [statsSegment, totalsSeg, ttlLabel, limitsSeg].filter(Boolean);
   if (segs.length) row2 = (statsSegment ? '' : ' ') + segs.join(' · ');
 }
 
