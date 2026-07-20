@@ -43999,7 +43999,7 @@ function ReportScreen({ onDone }) {
     input: a.input + r.tokens.input,
     output: a.output + r.tokens.output
   }), { attended: 0, agent: 0, sessions: 0, input: 0, output: 0 });
-  const peak = Math.max(1, ...rows.map((r) => r.attendedMs));
+  const grandTotal = Math.max(1, totals.attended);
   const labelOf = (r) => grouping === "project" ? r.project : r.date;
   const labelW = Math.max(7, ...rows.map((r) => labelOf(r).length));
   return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
@@ -44022,14 +44022,18 @@ function ReportScreen({ onDone }) {
   }, rows.length === 0 && /* @__PURE__ */ import_react30.default.createElement(Text, {
     dimColor: true
   }, "   no tracked work in this range — press W on a project to track it"), rows.map((r) => {
-    const filled = Math.round(r.attendedMs / peak * BAR_WIDTH);
+    const share = r.attendedMs / grandTotal;
+    const filled = Math.min(BAR_WIDTH, r.attendedMs > 0 ? Math.max(1, Math.round(share * BAR_WIDTH)) : 0);
+    const pct = Math.round(share * 100);
     return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
       key: labelOf(r)
     }, /* @__PURE__ */ import_react30.default.createElement(Text, null, `  ${labelOf(r).padEnd(labelW)}  `), /* @__PURE__ */ import_react30.default.createElement(Text, {
       color: ACCENT
     }, "█".repeat(filled)), /* @__PURE__ */ import_react30.default.createElement(Text, {
       dimColor: true
-    }, "░".repeat(BAR_WIDTH - filled)), /* @__PURE__ */ import_react30.default.createElement(Text, null, `  ${fmtDuration(r.attendedMs).padStart(7)}`), /* @__PURE__ */ import_react30.default.createElement(Text, {
+    }, "·".repeat(BAR_WIDTH - filled)), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      dimColor: true
+    }, `${String(pct).padStart(4)}%`), /* @__PURE__ */ import_react30.default.createElement(Text, null, `  ${fmtDuration(r.attendedMs).padStart(7)}`), /* @__PURE__ */ import_react30.default.createElement(Text, {
       dimColor: true
     }, `  agent ${fmtDuration(r.agentMs).padStart(7)}`), /* @__PURE__ */ import_react30.default.createElement(Text, {
       dimColor: true

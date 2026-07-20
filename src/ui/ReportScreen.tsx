@@ -61,7 +61,9 @@ export function ReportScreen({ onDone }: Props) {
     }),
     { attended: 0, agent: 0, sessions: 0, input: 0, output: 0 },
   );
-  const peak = Math.max(1, ...rows.map((r) => r.attendedMs));
+  // Bars show each row's SHARE OF TOTAL, not share of the biggest row —
+  // max-scaling always paints the top row full, which reads as "100%".
+  const grandTotal = Math.max(1, totals.attended);
   const labelOf = (r: ReportRow) => (grouping === "project" ? r.project : r.date);
   const labelW = Math.max(7, ...rows.map((r) => labelOf(r).length));
 
@@ -92,12 +94,19 @@ export function ReportScreen({ onDone }: Props) {
           </Text>
         )}
         {rows.map((r) => {
-          const filled = Math.round((r.attendedMs / peak) * BAR_WIDTH);
+          const share = r.attendedMs / grandTotal;
+          const filled = Math.min(
+            BAR_WIDTH,
+            // Any non-zero slice keeps at least one cell so it stays visible.
+            r.attendedMs > 0 ? Math.max(1, Math.round(share * BAR_WIDTH)) : 0,
+          );
+          const pct = Math.round(share * 100);
           return (
             <Box key={labelOf(r)}>
               <Text>{`  ${labelOf(r).padEnd(labelW)}  `}</Text>
               <Text color={ACCENT}>{"█".repeat(filled)}</Text>
-              <Text dimColor>{"░".repeat(BAR_WIDTH - filled)}</Text>
+              <Text dimColor>{"·".repeat(BAR_WIDTH - filled)}</Text>
+              <Text dimColor>{`${String(pct).padStart(4)}%`}</Text>
               <Text>{`  ${fmtDuration(r.attendedMs).padStart(7)}`}</Text>
               <Text dimColor>{`  agent ${fmtDuration(r.agentMs).padStart(7)}`}</Text>
               <Text dimColor>{`  ${String(r.sessions).padStart(3)} sess`}</Text>
