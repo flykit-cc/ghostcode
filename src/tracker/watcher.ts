@@ -180,7 +180,22 @@ function chime(): void {
 // key is present; playback falls back to `say`/chime while (or if) files
 // don't exist, so audio never goes silent.
 const XI_KEY = process.env.ELEVENLABS_API_KEY || "";
-const XI_VOICE = process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM"; // Rachel
+// Voice: env override, else the first voice in the ACCOUNT's own library —
+// hardcoding a premade voice 402s on accounts that don't have it.
+let xiVoice = process.env.ELEVENLABS_VOICE_ID || "";
+
+async function resolveVoice(): Promise<string> {
+  if (xiVoice) return xiVoice;
+  const res = await fetch("https://api.elevenlabs.io/v1/voices", {
+    headers: { "xi-api-key": XI_KEY },
+  });
+  if (!res.ok) throw new Error(`elevenlabs voices ${res.status}`);
+  const j = (await res.json()) as { voices?: Array<{ voice_id: string }> };
+  const id = j.voices?.[0]?.voice_id;
+  if (!id) throw new Error("elevenlabs: account has no voices");
+  xiVoice = id;
+  return id;
+}
 const AUDIO_DIR = join(homedir(), ".config/ghostcode/tracker/audio");
 const projectName = basename(projectRoot);
 const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -189,8 +204,9 @@ const idleClip = join(AUDIO_DIR, `${slug}-is-idle.mp3`);
 const digitClip = (n: string) => join(AUDIO_DIR, `digit-${n}.mp3`);
 
 async function xiGenerate(text: string, outPath: string): Promise<void> {
+  const voice = await resolveVoice();
   const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${XI_VOICE}`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
     {
       method: "POST",
       headers: { "xi-api-key": XI_KEY, "content-type": "application/json" },

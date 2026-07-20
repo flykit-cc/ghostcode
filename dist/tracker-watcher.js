@@ -258,7 +258,22 @@ function chime() {
   } catch {}
 }
 var XI_KEY = process.env.ELEVENLABS_API_KEY || "";
-var XI_VOICE = process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
+var xiVoice = process.env.ELEVENLABS_VOICE_ID || "";
+async function resolveVoice() {
+  if (xiVoice)
+    return xiVoice;
+  const res = await fetch("https://api.elevenlabs.io/v1/voices", {
+    headers: { "xi-api-key": XI_KEY }
+  });
+  if (!res.ok)
+    throw new Error(`elevenlabs voices ${res.status}`);
+  const j = await res.json();
+  const id = j.voices?.[0]?.voice_id;
+  if (!id)
+    throw new Error("elevenlabs: account has no voices");
+  xiVoice = id;
+  return id;
+}
 var AUDIO_DIR = join2(homedir2(), ".config/ghostcode/tracker/audio");
 var projectName = basename(projectRoot);
 var slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -266,7 +281,8 @@ var warnClip = join2(AUDIO_DIR, `${slug}-going-idle.mp3`);
 var idleClip = join2(AUDIO_DIR, `${slug}-is-idle.mp3`);
 var digitClip = (n) => join2(AUDIO_DIR, `digit-${n}.mp3`);
 async function xiGenerate(text, outPath) {
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${XI_VOICE}`, {
+  const voice = await resolveVoice();
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
     method: "POST",
     headers: { "xi-api-key": XI_KEY, "content-type": "application/json" },
     body: JSON.stringify({ text, model_id: "eleven_flash_v2_5" })

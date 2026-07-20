@@ -222,12 +222,12 @@ try {
       if (Date.now() - (live.updated || 0) < 10_000) {
         const min = Math.round((live.attended_ms || 0) / 60000);
         const t = min < 60 ? `${min}m` : `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`;
-        // yellow = grace countdown (about to pause), ⏸ = paused (idle),
-        // plain dim = counting.
+        // yellow = grace countdown (about to pause), light blue ⏸ = paused
+        // (idle), plain dim = counting.
         trackerLabel = live.state === 'countdown'
           ? `\x1b[38;2;200;170;80m⏱ ${t}\x1b[0m`
           : live.state === 'idle'
-            ? `\x1b[2m⏱ ⏸ ${t}\x1b[0m`
+            ? `\x1b[38;2;130;180;230m⏱ ⏸ ${t}\x1b[0m`
             : `\x1b[2m⏱ ${t}\x1b[0m`;
       }
     }
