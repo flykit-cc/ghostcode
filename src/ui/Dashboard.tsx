@@ -41,6 +41,7 @@ type Props = {
   onToggleVSCode: () => void;
   trackingOn: boolean;
   onToggleTracking: () => void;
+  onOpenReports: () => void;
   onLaunch: () => void;
   onQuit: () => void;
 };
@@ -83,6 +84,7 @@ export function Dashboard({
   onToggleVSCode,
   trackingOn,
   onToggleTracking,
+  onOpenReports,
   onLaunch,
   onQuit,
 }: Props) {
@@ -140,6 +142,7 @@ export function Dashboard({
     if (input === " " && field === "vscode") onToggleVSCode();
     if (input === " " && field === "track") onToggleTracking();
     if ((input === "w" || input === "W") && values.project) onToggleTracking();
+    if (input === "r" || input === "R") onOpenReports();
   });
 
   const projectValue = values.project
@@ -246,7 +249,7 @@ export function Dashboard({
           </Text>
         </Box>
       )}
-      <Footer hint="↑↓ move · ⏎ edit/launch · space toggle · W track · esc shell" />
+      <Footer hint="↑↓ move · ⏎ edit/launch · space toggle · W track · R reports · esc shell" />
     </Box>
   );
 }

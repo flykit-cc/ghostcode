@@ -104,6 +104,45 @@ export function aggregateEvents(lines: string[]): ReportRow[] {
   );
 }
 
+export type Grouping = "project" | "date";
+
+/**
+ * Collapse per-day-per-project rows into one row per project (or per date),
+ * summing every metric. `date` holds the group label for "date" grouping;
+ * `project` holds it for "project" grouping — the other field is left empty
+ * so callers render a single label column.
+ */
+export function groupRows(rows: ReportRow[], by: Grouping): ReportRow[] {
+  const acc = new Map<string, ReportRow>();
+  for (const r of rows) {
+    const key = by === "project" ? r.project : r.date;
+    let row = acc.get(key);
+    if (!row) {
+      row = {
+        date: by === "date" ? key : "",
+        project: by === "project" ? key : "",
+        attendedMs: 0,
+        agentMs: 0,
+        sessions: 0,
+        tokens: { input: 0, output: 0, cache_read: 0, cache_write: 0 },
+      };
+      acc.set(key, row);
+    }
+    row.attendedMs += r.attendedMs;
+    row.agentMs += r.agentMs;
+    row.sessions += r.sessions;
+    row.tokens.input += r.tokens.input;
+    row.tokens.output += r.tokens.output;
+    row.tokens.cache_read += r.tokens.cache_read;
+    row.tokens.cache_write += r.tokens.cache_write;
+  }
+  const out = [...acc.values()];
+  // Projects rank by time spent; dates read chronologically.
+  return by === "project"
+    ? out.sort((a, b) => b.attendedMs - a.attendedMs)
+    : out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export function fmtDuration(ms: number): string {
   const min = Math.round(ms / 60_000);
   if (min < 60) return `${min}m`;

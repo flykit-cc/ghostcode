@@ -9,6 +9,7 @@ import { ListPicker, type ListItem } from "./ListPicker.tsx";
 import { SecretPrompt } from "./SecretPrompt.tsx";
 import { SettingsScreen, type SettingsAction } from "./SettingsScreen.tsx";
 import { ProjectRootsScreen } from "./ProjectRootsScreen.tsx";
+import { ReportScreen } from "./ReportScreen.tsx";
 import { ApiKeysScreen } from "./ApiKeysScreen.tsx";
 import { ConfirmScreen } from "./ConfirmScreen.tsx";
 import { discoverProjects, loadRoots, type Project } from "../projects.ts";
@@ -42,6 +43,7 @@ type Mode =
   | "secret"
   | "projectRoots"
   | "apiKeys"
+  | "reports"
   | "confirm";
 
 type DashFocus =
@@ -239,6 +241,9 @@ export function App({ onDone }: Props) {
   function handleSettingsAction(action: SettingsAction, currentIndex: number) {
     setSettingsIndex(currentIndex);
     switch (action) {
+      case "reports":
+        setMode("reports");
+        break;
       case "projectRoots":
         setMode("projectRoots");
         break;
@@ -526,6 +531,10 @@ export function App({ onDone }: Props) {
     );
   }
 
+  if (mode === "reports") {
+    return <ReportScreen onDone={() => setMode("settings")} />;
+  }
+
   if (mode === "projectRoots") {
     return (
       <ProjectRootsScreen
@@ -638,6 +647,7 @@ export function App({ onDone }: Props) {
         saveState(next);
         setState(next);
       }}
+      onOpenReports={() => setMode("reports")}
       onLaunch={() => performLaunch(values)}
       onQuit={() => finish({ kind: "quit" })}
     />

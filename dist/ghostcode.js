@@ -37381,11 +37381,38 @@ var require_stack_utils = __commonJS((exports, module) => {
 });
 
 // src/tracker/log.ts
-import { homedir as homedir7 } from "node:os";
-import { join as join9 } from "node:path";
+import {
+  appendFileSync,
+  existsSync as existsSync4,
+  mkdirSync as mkdirSync3,
+  readdirSync as readdirSync2,
+  readFileSync as readFileSync4,
+  statSync as statSync2,
+  writeFileSync as writeFileSync3
+} from "node:fs";
+import { homedir as homedir4 } from "node:os";
+import { join as join5 } from "node:path";
+function readEventLines(days) {
+  try {
+    if (!existsSync4(TRACKER_DIR))
+      return [];
+    const cutoff = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+    const lines = [];
+    for (const f of readdirSync2(TRACKER_DIR).sort()) {
+      const m = /^events-(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(f);
+      if (!m || m[1] < cutoff)
+        continue;
+      lines.push(...readFileSync4(join5(TRACKER_DIR, f), "utf8").split(`
+`).filter(Boolean));
+    }
+    return lines;
+  } catch {
+    return [];
+  }
+}
 var TRACKER_DIR;
 var init_log = __esm(() => {
-  TRACKER_DIR = join9(homedir7(), ".config/ghostcode/tracker");
+  TRACKER_DIR = join5(homedir4(), ".config/ghostcode/tracker");
 });
 
 // src/tracker/report.ts
@@ -37459,6 +37486,33 @@ function aggregateEvents(lines) {
   }
   return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date) || a.project.localeCompare(b.project));
 }
+function groupRows(rows, by) {
+  const acc = new Map;
+  for (const r of rows) {
+    const key = by === "project" ? r.project : r.date;
+    let row = acc.get(key);
+    if (!row) {
+      row = {
+        date: by === "date" ? key : "",
+        project: by === "project" ? key : "",
+        attendedMs: 0,
+        agentMs: 0,
+        sessions: 0,
+        tokens: { input: 0, output: 0, cache_read: 0, cache_write: 0 }
+      };
+      acc.set(key, row);
+    }
+    row.attendedMs += r.attendedMs;
+    row.agentMs += r.agentMs;
+    row.sessions += r.sessions;
+    row.tokens.input += r.tokens.input;
+    row.tokens.output += r.tokens.output;
+    row.tokens.cache_read += r.tokens.cache_read;
+    row.tokens.cache_write += r.tokens.cache_write;
+  }
+  const out = [...acc.values()];
+  return by === "project" ? out.sort((a, b) => b.attendedMs - a.attendedMs) : out.sort((a, b) => a.date.localeCompare(b.date));
+}
 function fmtDuration(ms) {
   const min2 = Math.round(ms / 60000);
   if (min2 < 60)
@@ -37528,27 +37582,18 @@ var exports_report_cli = {};
 __export(exports_report_cli, {
   runReport: () => runReport
 });
-import { existsSync as existsSync8, readdirSync as readdirSync2, readFileSync as readFileSync6 } from "node:fs";
-import { join as join10 } from "node:path";
+import { existsSync as existsSync9 } from "node:fs";
 function runReport(argv) {
   const days = argv.includes("--day") ? 1 : argv.includes("--month") ? 31 : 7;
   const csv = argv.includes("--csv");
   const pIdx = argv.indexOf("--project");
   const projectFilter = pIdx !== -1 ? argv[pIdx + 1] : null;
-  if (!existsSync8(TRACKER_DIR)) {
+  if (!existsSync9(TRACKER_DIR)) {
     process.stdout.write(`no tracked work yet — toggle tracking with W on a project
 `);
     return 0;
   }
-  const cutoff = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
-  const lines = [];
-  for (const f of readdirSync2(TRACKER_DIR).sort()) {
-    const m = /^events-(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(f);
-    if (!m || m[1] < cutoff)
-      continue;
-    lines.push(...readFileSync6(join10(TRACKER_DIR, f), "utf8").split(`
-`).filter(Boolean));
-  }
+  const lines = readEventLines(days);
   let rows = aggregateEvents(lines);
   if (projectFilter)
     rows = rows.filter((r) => r.project === projectFilter);
@@ -37561,7 +37606,7 @@ var init_report_cli = __esm(() => {
 });
 
 // src/index.tsx
-var import_react33 = __toESM(require_react(), 1);
+var import_react34 = __toESM(require_react(), 1);
 
 // node_modules/ink/build/render.js
 import { Stream } from "node:stream";
@@ -43080,10 +43125,10 @@ var import_react20 = __toESM(require_react(), 1);
 // node_modules/ink/build/hooks/use-focus-manager.js
 var import_react21 = __toESM(require_react(), 1);
 // src/ui/App.tsx
-var import_react32 = __toESM(require_react(), 1);
+var import_react33 = __toESM(require_react(), 1);
 import { rmSync } from "node:fs";
-import { homedir as homedir6 } from "node:os";
-import { join as join7 } from "node:path";
+import { homedir as homedir7 } from "node:os";
+import { join as join8 } from "node:path";
 
 // src/ui/Dashboard.tsx
 var import_react24 = __toESM(require_react(), 1);
@@ -43291,6 +43336,7 @@ function Dashboard({
   onToggleVSCode,
   trackingOn,
   onToggleTracking,
+  onOpenReports,
   onLaunch,
   onQuit
 }) {
@@ -43341,6 +43387,8 @@ function Dashboard({
       onToggleTracking();
     if ((input === "w" || input === "W") && values2.project)
       onToggleTracking();
+    if (input === "r" || input === "R")
+      onOpenReports();
   });
   const projectValue = values2.project ? `${projectDisplay(values2.project)}${trackingOn ? " ⏱" : ""}` : "— pick a project —";
   const providerValue = `${values2.provider.label}${values2.provider.sublabel ? ` · ${values2.provider.sublabel}` : ""}`;
@@ -43410,7 +43458,7 @@ function Dashboard({
   }, /* @__PURE__ */ import_react24.default.createElement(Text, {
     dimColor: true
   }, "recent:", " ", recents.slice(0, 5).map((r) => basename2(r.path)).join(" · "))), /* @__PURE__ */ import_react24.default.createElement(Footer, {
-    hint: "↑↓ move · ⏎ edit/launch · space toggle · W track · esc shell"
+    hint: "↑↓ move · ⏎ edit/launch · space toggle · W track · R reports · esc shell"
   }));
 }
 
@@ -43683,6 +43731,11 @@ function SettingsScreen({
 }) {
   const items = [
     {
+      id: "reports",
+      label: "Work reports",
+      sublabel: "time + tokens per project"
+    },
+    {
       id: "projectRoots",
       label: "Project roots",
       sublabel: `${roots.length} root${roots.length === 1 ? "" : "s"}`
@@ -43913,8 +43966,90 @@ function ProjectRootsScreen({ onDone }) {
   }));
 }
 
-// src/ui/ApiKeysScreen.tsx
+// src/ui/ReportScreen.tsx
 var import_react30 = __toESM(require_react(), 1);
+init_log();
+init_report();
+var RANGES = [
+  { id: "day", label: "Today", days: 1 },
+  { id: "week", label: "7 days", days: 7 },
+  { id: "month", label: "31 days", days: 31 }
+];
+var BAR_WIDTH = 18;
+var fmtTok2 = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n);
+function ReportScreen({ onDone }) {
+  const [rangeIdx, setRangeIdx] = import_react30.useState(1);
+  const [grouping, setGrouping] = import_react30.useState("project");
+  const range2 = RANGES[rangeIdx];
+  const rows = import_react30.useMemo(() => groupRows(aggregateEvents(readEventLines(range2.days)), grouping), [range2.days, grouping]);
+  use_input_default((input, key) => {
+    if (key.escape)
+      return onDone();
+    if (key.leftArrow)
+      return setRangeIdx((i) => i === 0 ? RANGES.length - 1 : i - 1);
+    if (key.rightArrow || key.tab)
+      return setRangeIdx((i) => (i + 1) % RANGES.length);
+    if (input === "g" || input === "G")
+      return setGrouping((g) => g === "project" ? "date" : "project");
+  });
+  const totals = rows.reduce((a, r) => ({
+    attended: a.attended + r.attendedMs,
+    agent: a.agent + r.agentMs,
+    sessions: a.sessions + r.sessions,
+    input: a.input + r.tokens.input,
+    output: a.output + r.tokens.output
+  }), { attended: 0, agent: 0, sessions: 0, input: 0, output: 0 });
+  const peak = Math.max(1, ...rows.map((r) => r.attendedMs));
+  const labelOf = (r) => grouping === "project" ? r.project : r.date;
+  const labelW = Math.max(7, ...rows.map((r) => labelOf(r).length));
+  return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+    flexDirection: "column"
+  }, /* @__PURE__ */ import_react30.default.createElement(Header, {
+    title: "Reports"
+  }), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+    paddingX: 1
+  }, RANGES.map((r, i) => /* @__PURE__ */ import_react30.default.createElement(Text, {
+    key: r.id,
+    backgroundColor: i === rangeIdx ? SELECTION_BG : undefined,
+    color: i === rangeIdx ? "white" : undefined,
+    dimColor: i !== rangeIdx,
+    bold: i === rangeIdx
+  }, `  ${r.label}  `)), /* @__PURE__ */ import_react30.default.createElement(Text, {
+    dimColor: true
+  }, `   grouped by ${grouping}`)), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+    flexDirection: "column",
+    marginTop: 1
+  }, rows.length === 0 && /* @__PURE__ */ import_react30.default.createElement(Text, {
+    dimColor: true
+  }, "   no tracked work in this range — press W on a project to track it"), rows.map((r) => {
+    const filled = Math.round(r.attendedMs / peak * BAR_WIDTH);
+    return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+      key: labelOf(r)
+    }, /* @__PURE__ */ import_react30.default.createElement(Text, null, `  ${labelOf(r).padEnd(labelW)}  `), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      color: ACCENT
+    }, "█".repeat(filled)), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      dimColor: true
+    }, "░".repeat(BAR_WIDTH - filled)), /* @__PURE__ */ import_react30.default.createElement(Text, null, `  ${fmtDuration(r.attendedMs).padStart(7)}`), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      dimColor: true
+    }, `  agent ${fmtDuration(r.agentMs).padStart(7)}`), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      dimColor: true
+    }, `  ${String(r.sessions).padStart(3)} sess`), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      dimColor: true
+    }, `  ↑${fmtTok2(r.tokens.input)} ↓${fmtTok2(r.tokens.output)}`));
+  })), rows.length > 0 && /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+    marginTop: 1,
+    paddingX: 1
+  }, /* @__PURE__ */ import_react30.default.createElement(Text, {
+    bold: true
+  }, `total  ${fmtDuration(totals.attended)}`), /* @__PURE__ */ import_react30.default.createElement(Text, {
+    dimColor: true
+  }, `   agent ${fmtDuration(totals.agent)} · ${totals.sessions} sessions · ↑${fmtTok2(totals.input)} ↓${fmtTok2(totals.output)}`)), /* @__PURE__ */ import_react30.default.createElement(Footer, {
+    hint: "←→ range · G group by project/date · esc back"
+  }));
+}
+
+// src/ui/ApiKeysScreen.tsx
+var import_react31 = __toESM(require_react(), 1);
 
 // src/keychain.ts
 import { spawnSync } from "node:child_process";
@@ -43940,9 +44075,9 @@ function hasSecret(service) {
 // src/ui/ApiKeysScreen.tsx
 function ApiKeysScreen({ providers, onDone }) {
   const withSecret = providers.filter((p) => !!p.secret);
-  const [index, setIndex] = import_react30.useState(0);
-  const [mode, setMode] = import_react30.useState({ kind: "list" });
-  const [rev, setRev] = import_react30.useState(0);
+  const [index, setIndex] = import_react31.useState(0);
+  const [mode, setMode] = import_react31.useState({ kind: "list" });
+  const [rev, setRev] = import_react31.useState(0);
   use_input_default((input, key) => {
     if (mode.kind !== "list")
       return;
@@ -43967,7 +44102,7 @@ function ApiKeysScreen({ providers, onDone }) {
     }
   });
   if (mode.kind === "edit" && mode.provider.secret) {
-    return /* @__PURE__ */ import_react30.default.createElement(SecretPrompt, {
+    return /* @__PURE__ */ import_react31.default.createElement(SecretPrompt, {
       providerLabel: mode.provider.label,
       onSubmit: (v) => {
         setSecret(mode.provider.secret.keychainService, v);
@@ -43987,43 +44122,43 @@ function ApiKeysScreen({ providers, onDone }) {
     };
   });
   const maxLabelLen = Math.max(4, ...rows.map((r) => r.label.length));
-  return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+  return /* @__PURE__ */ import_react31.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react30.default.createElement(Header, {
+  }, /* @__PURE__ */ import_react31.default.createElement(Header, {
     title: "API keys"
-  }), rows.length === 0 && /* @__PURE__ */ import_react30.default.createElement(Text, {
+  }), rows.length === 0 && /* @__PURE__ */ import_react31.default.createElement(Text, {
     dimColor: true
   }, " no providers require a key"), rows.map((r, i) => {
     const active = i === index;
     const label = r.label.padEnd(maxLabelLen);
     const bg = active ? SELECTION_BG : undefined;
-    return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+    return /* @__PURE__ */ import_react31.default.createElement(Box_default, {
       key: r.provider.id
-    }, /* @__PURE__ */ import_react30.default.createElement(Text, {
+    }, /* @__PURE__ */ import_react31.default.createElement(Text, {
       backgroundColor: bg,
       color: ACCENT,
       bold: active
-    }, ` ${active ? "▸" : " "}  `), /* @__PURE__ */ import_react30.default.createElement(Text, {
+    }, ` ${active ? "▸" : " "}  `), /* @__PURE__ */ import_react31.default.createElement(Text, {
       backgroundColor: bg,
       color: active ? "white" : undefined,
       bold: active
-    }, `${label}  `), /* @__PURE__ */ import_react30.default.createElement(Text, {
+    }, `${label}  `), /* @__PURE__ */ import_react31.default.createElement(Text, {
       backgroundColor: bg,
       color: r.set ? "green" : "yellow",
       bold: active
     }, r.status));
-  }), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+  }), /* @__PURE__ */ import_react31.default.createElement(Box_default, {
     marginTop: 1,
     paddingX: 1
-  }, /* @__PURE__ */ import_react30.default.createElement(Text, {
+  }, /* @__PURE__ */ import_react31.default.createElement(Text, {
     dimColor: true
-  }, 'Keys are stored in macOS Keychain under account "ghostcode".')), /* @__PURE__ */ import_react30.default.createElement(Footer, {
+  }, 'Keys are stored in macOS Keychain under account "ghostcode".')), /* @__PURE__ */ import_react31.default.createElement(Footer, {
     hint: "↑↓ · ⏎ set/replace · D delete · esc back"
   }));
 }
 
 // src/ui/ConfirmScreen.tsx
-var import_react31 = __toESM(require_react(), 1);
+var import_react32 = __toESM(require_react(), 1);
 function ConfirmScreen({
   title,
   message,
@@ -44033,7 +44168,7 @@ function ConfirmScreen({
   onConfirm,
   onCancel
 }) {
-  const [index, setIndex] = import_react31.useState(1);
+  const [index, setIndex] = import_react32.useState(1);
   use_input_default((input, key) => {
     if (key.escape)
       return onCancel();
@@ -44052,34 +44187,34 @@ function ConfirmScreen({
   });
   const items = [confirmLabel, cancelLabel];
   const activeColor = danger ? "red" : ACCENT;
-  return /* @__PURE__ */ import_react31.default.createElement(Box_default, {
+  return /* @__PURE__ */ import_react32.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react31.default.createElement(Header, {
+  }, /* @__PURE__ */ import_react32.default.createElement(Header, {
     title
-  }), /* @__PURE__ */ import_react31.default.createElement(Box_default, {
+  }), /* @__PURE__ */ import_react32.default.createElement(Box_default, {
     marginTop: 1,
     paddingX: 1
-  }, /* @__PURE__ */ import_react31.default.createElement(Text, null, message)), /* @__PURE__ */ import_react31.default.createElement(Box_default, {
+  }, /* @__PURE__ */ import_react32.default.createElement(Text, null, message)), /* @__PURE__ */ import_react32.default.createElement(Box_default, {
     marginTop: 1
   }, items.map((label, i) => {
     const active = i === index;
     const bg = active ? i === 0 ? activeColor : SELECTION_BG : undefined;
-    return /* @__PURE__ */ import_react31.default.createElement(Text, {
+    return /* @__PURE__ */ import_react32.default.createElement(Text, {
       key: label,
       backgroundColor: bg,
       color: active ? "white" : undefined,
       bold: active
     }, `  ${active ? "▸" : " "} ${label}  `);
-  })), /* @__PURE__ */ import_react31.default.createElement(Footer, {
+  })), /* @__PURE__ */ import_react32.default.createElement(Footer, {
     hint: "Y/N · ←→ · ⏎ select · esc cancel"
   }));
 }
 
 // src/providers.ts
-import { readFileSync as readFileSync4, existsSync as existsSync4, writeFileSync as writeFileSync3, mkdirSync as mkdirSync3 } from "node:fs";
-import { homedir as homedir4 } from "node:os";
-import { dirname as dirname3, join as join5 } from "node:path";
-var CONFIG_PATH3 = join5(homedir4(), ".config/ghostcode/providers.json");
+import { readFileSync as readFileSync5, existsSync as existsSync5, writeFileSync as writeFileSync4, mkdirSync as mkdirSync4 } from "node:fs";
+import { homedir as homedir5 } from "node:os";
+import { dirname as dirname3, join as join6 } from "node:path";
+var CONFIG_PATH3 = join6(homedir5(), ".config/ghostcode/providers.json");
 var DEFAULT_PROVIDERS = [
   {
     id: "claude-oauth",
@@ -44232,28 +44367,28 @@ function mergeBuiltins(user) {
   return { merged, changed };
 }
 function loadProviders() {
-  if (existsSync4(CONFIG_PATH3)) {
+  if (existsSync5(CONFIG_PATH3)) {
     try {
-      const user = JSON.parse(readFileSync4(CONFIG_PATH3, "utf8"));
+      const user = JSON.parse(readFileSync5(CONFIG_PATH3, "utf8"));
       const { merged, changed } = mergeBuiltins(user);
       if (changed) {
         try {
-          writeFileSync3(CONFIG_PATH3, JSON.stringify(merged, null, 2));
+          writeFileSync4(CONFIG_PATH3, JSON.stringify(merged, null, 2));
         } catch {}
       }
       return merged;
     } catch {}
   }
-  mkdirSync3(dirname3(CONFIG_PATH3), { recursive: true });
-  writeFileSync3(CONFIG_PATH3, JSON.stringify(DEFAULT_PROVIDERS, null, 2));
+  mkdirSync4(dirname3(CONFIG_PATH3), { recursive: true });
+  writeFileSync4(CONFIG_PATH3, JSON.stringify(DEFAULT_PROVIDERS, null, 2));
   return DEFAULT_PROVIDERS;
 }
 
 // src/state.ts
-import { existsSync as existsSync5, mkdirSync as mkdirSync4, readFileSync as readFileSync5, writeFileSync as writeFileSync4 } from "node:fs";
-import { homedir as homedir5 } from "node:os";
-import { dirname as dirname4, join as join6 } from "node:path";
-var STATE_PATH2 = join6(homedir5(), ".config/ghostcode/state.json");
+import { existsSync as existsSync6, mkdirSync as mkdirSync5, readFileSync as readFileSync6, writeFileSync as writeFileSync5 } from "node:fs";
+import { homedir as homedir6 } from "node:os";
+import { dirname as dirname4, join as join7 } from "node:path";
+var STATE_PATH2 = join7(homedir6(), ".config/ghostcode/state.json");
 var PROJECT_COLOR_PALETTE = [
   "#8b4a3a",
   "#8b6a3a",
@@ -44276,18 +44411,18 @@ function cycleProjectColor(current) {
 }
 var EMPTY = { recents: [], favorites: [], perProject: {} };
 function loadState() {
-  if (!existsSync5(STATE_PATH2))
+  if (!existsSync6(STATE_PATH2))
     return { ...EMPTY };
   try {
-    const parsed = JSON.parse(readFileSync5(STATE_PATH2, "utf8"));
+    const parsed = JSON.parse(readFileSync6(STATE_PATH2, "utf8"));
     return { ...EMPTY, ...parsed };
   } catch {
     return { ...EMPTY };
   }
 }
 function saveState(s) {
-  mkdirSync4(dirname4(STATE_PATH2), { recursive: true });
-  writeFileSync4(STATE_PATH2, JSON.stringify(s, null, 2));
+  mkdirSync5(dirname4(STATE_PATH2), { recursive: true });
+  writeFileSync5(STATE_PATH2, JSON.stringify(s, null, 2));
 }
 function bumpRecent(s, projectPath, max2 = 8) {
   const recents = [
@@ -44341,10 +44476,10 @@ function countTints(s) {
 }
 
 // src/env.ts
-import { existsSync as existsSync6 } from "node:fs";
+import { existsSync as existsSync7 } from "node:fs";
 import { spawnSync as spawnSync2 } from "node:child_process";
 function detectVSCode() {
-  if (existsSync6("/Applications/Visual Studio Code.app"))
+  if (existsSync7("/Applications/Visual Studio Code.app"))
     return true;
   const r = spawnSync2("command", ["-v", "code"], { encoding: "utf8" });
   if (r.status === 0 && r.stdout.trim())
@@ -44354,7 +44489,7 @@ function detectVSCode() {
 }
 
 // src/ui/App.tsx
-var SETUP_MARKER = join7(homedir6(), ".config/ghostcode/.setup-complete");
+var SETUP_MARKER = join8(homedir7(), ".config/ghostcode/.setup-complete");
 var EFFORT_ITEMS = [
   { id: "default", label: "Medium", sublabel: "default" },
   { id: "low", label: "Low" },
@@ -44395,21 +44530,21 @@ function modelItems(provider) {
 }
 function App2({ onDone }) {
   const { exit } = use_app_default();
-  const providers = import_react32.useMemo(() => loadProviders(), []);
-  const vsCodeAvailable = import_react32.useMemo(() => detectVSCode(), []);
-  const roots = import_react32.useMemo(() => loadRoots(), []);
-  const [projectRev, setProjectRev] = import_react32.useState(0);
-  const projects = import_react32.useMemo(() => discoverProjects(), [projectRev]);
-  const [state, setState] = import_react32.useState(() => loadState());
+  const providers = import_react33.useMemo(() => loadProviders(), []);
+  const vsCodeAvailable = import_react33.useMemo(() => detectVSCode(), []);
+  const roots = import_react33.useMemo(() => loadRoots(), []);
+  const [projectRev, setProjectRev] = import_react33.useState(0);
+  const projects = import_react33.useMemo(() => discoverProjects(), [projectRev]);
+  const [state, setState] = import_react33.useState(() => loadState());
   const defaultProvider = providers.find((p) => p.id === state.lastProviderId) ?? providers[0];
   const defaultMode = state.lastMode ?? "bypassPermissions";
-  const initialProject = import_react32.useMemo(() => {
+  const initialProject = import_react33.useMemo(() => {
     const lastPath = state.recents[0];
     if (!lastPath)
       return null;
     return projects.find((p) => p.path === lastPath) ?? null;
   }, [projects, state.recents]);
-  const [values2, setValues] = import_react32.useState(() => {
+  const [values2, setValues] = import_react33.useState(() => {
     const saved = initialProject ? state.perProject[initialProject.path] : undefined;
     return {
       project: initialProject,
@@ -44420,13 +44555,13 @@ function App2({ onDone }) {
       openVSCode: saved?.vscode ?? false
     };
   });
-  const [mode, setMode] = import_react32.useState("project");
-  const [wizardActive, setWizardActive] = import_react32.useState(true);
-  const [pendingProvider, setPendingProvider] = import_react32.useState(null);
-  const [dashFocus, setDashFocus] = import_react32.useState("launch");
-  const [settingsIndex, setSettingsIndex] = import_react32.useState(0);
-  const [confirmSpec, setConfirmSpec] = import_react32.useState(null);
-  const [secretsRev, setSecretsRev] = import_react32.useState(0);
+  const [mode, setMode] = import_react33.useState("project");
+  const [wizardActive, setWizardActive] = import_react33.useState(true);
+  const [pendingProvider, setPendingProvider] = import_react33.useState(null);
+  const [dashFocus, setDashFocus] = import_react33.useState("launch");
+  const [settingsIndex, setSettingsIndex] = import_react33.useState(0);
+  const [confirmSpec, setConfirmSpec] = import_react33.useState(null);
+  const [secretsRev, setSecretsRev] = import_react33.useState(0);
   const recents = state.recents.map((p) => projects.find((pr) => pr.path === p)).filter((p) => !!p);
   function finish(outcome) {
     exit();
@@ -44483,6 +44618,9 @@ function App2({ onDone }) {
   function handleSettingsAction(action, currentIndex) {
     setSettingsIndex(currentIndex);
     switch (action) {
+      case "reports":
+        setMode("reports");
+        break;
       case "projectRoots":
         setMode("projectRoots");
         break;
@@ -44550,7 +44688,7 @@ function App2({ onDone }) {
     }
   }
   if (mode === "project") {
-    return /* @__PURE__ */ import_react32.default.createElement(ProjectPicker, {
+    return /* @__PURE__ */ import_react33.default.createElement(ProjectPicker, {
       projects,
       recents: state.recents,
       favorites: state.favorites,
@@ -44608,7 +44746,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "provider") {
-    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react33.default.createElement(ListPicker, {
       title: "Provider",
       items: providers.map((p) => {
         let sublabel = p.sublabel;
@@ -44653,7 +44791,7 @@ function App2({ onDone }) {
   if (mode === "model") {
     const items = modelItems(values2.provider);
     const initialId = values2.model || (values2.provider.supportsClaudeFlags ? "" : items[0]?.id);
-    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react33.default.createElement(ListPicker, {
       title: "Model",
       items,
       initialId,
@@ -44676,7 +44814,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "effort") {
-    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react33.default.createElement(ListPicker, {
       title: "Effort",
       items: EFFORT_ITEMS,
       initialId: values2.effort,
@@ -44695,7 +44833,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "mode") {
-    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react33.default.createElement(ListPicker, {
       title: "Permission mode",
       items: MODE_ITEMS,
       initialId: values2.mode,
@@ -44712,7 +44850,7 @@ function App2({ onDone }) {
   }
   if (mode === "settings") {
     const apiKeysSet = providers.filter((p) => p.secret && hasSecret(p.secret.keychainService)).length;
-    return /* @__PURE__ */ import_react32.default.createElement(SettingsScreen, {
+    return /* @__PURE__ */ import_react33.default.createElement(SettingsScreen, {
       roots,
       counts: {
         recents: state.recents.length,
@@ -44730,8 +44868,13 @@ function App2({ onDone }) {
       }
     });
   }
+  if (mode === "reports") {
+    return /* @__PURE__ */ import_react33.default.createElement(ReportScreen, {
+      onDone: () => setMode("settings")
+    });
+  }
   if (mode === "projectRoots") {
-    return /* @__PURE__ */ import_react32.default.createElement(ProjectRootsScreen, {
+    return /* @__PURE__ */ import_react33.default.createElement(ProjectRootsScreen, {
       onDone: () => {
         setProjectRev((r) => r + 1);
         setMode("settings");
@@ -44739,7 +44882,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "apiKeys") {
-    return /* @__PURE__ */ import_react32.default.createElement(ApiKeysScreen, {
+    return /* @__PURE__ */ import_react33.default.createElement(ApiKeysScreen, {
       providers,
       onDone: () => {
         setSecretsRev((r) => r + 1);
@@ -44748,7 +44891,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "confirm" && confirmSpec) {
-    return /* @__PURE__ */ import_react32.default.createElement(ConfirmScreen, {
+    return /* @__PURE__ */ import_react33.default.createElement(ConfirmScreen, {
       title: confirmSpec.title,
       message: confirmSpec.message,
       danger: confirmSpec.danger,
@@ -44760,7 +44903,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "secret" && pendingProvider?.secret) {
-    return /* @__PURE__ */ import_react32.default.createElement(SecretPrompt, {
+    return /* @__PURE__ */ import_react33.default.createElement(SecretPrompt, {
       providerLabel: pendingProvider.label,
       onSubmit: (v) => {
         setSecret(pendingProvider.secret.keychainService, v);
@@ -44799,7 +44942,7 @@ function App2({ onDone }) {
       }
     });
   }
-  return /* @__PURE__ */ import_react32.default.createElement(Dashboard, {
+  return /* @__PURE__ */ import_react33.default.createElement(Dashboard, {
     values: values2,
     recents,
     vsCodeAvailable,
@@ -44821,6 +44964,7 @@ function App2({ onDone }) {
       saveState(next);
       setState(next);
     },
+    onOpenReports: () => setMode("reports"),
     onLaunch: () => performLaunch(values2),
     onQuit: () => finish({ kind: "quit" })
   });
@@ -44831,20 +44975,20 @@ import { spawnSync as spawnSync3 } from "node:child_process";
 
 // src/nvidia/spawn.ts
 import { spawn } from "node:child_process";
-import { existsSync as existsSync7 } from "node:fs";
-import { dirname as dirname5, join as join8 } from "node:path";
+import { existsSync as existsSync8 } from "node:fs";
+import { dirname as dirname5, join as join9 } from "node:path";
 import { fileURLToPath } from "node:url";
 function resolveEntrypoint() {
   const argvScript = process.argv[1];
   if (argvScript) {
-    const siblingProd = join8(dirname5(argvScript), "nvidia-proxy.js");
-    if (existsSync7(siblingProd)) {
+    const siblingProd = join9(dirname5(argvScript), "nvidia-proxy.js");
+    if (existsSync8(siblingProd)) {
       return { cmd: process.execPath, script: siblingProd };
     }
   }
   const here = fileURLToPath(import.meta.url);
-  const devTs = join8(dirname5(here), "proxy.ts");
-  if (existsSync7(devTs)) {
+  const devTs = join9(dirname5(here), "proxy.ts");
+  if (existsSync8(devTs)) {
     return { cmd: "bun", script: devTs };
   }
   throw new Error("nvidia proxy script not found (looked for dist/nvidia-proxy.js and src/nvidia/proxy.ts)");
@@ -45026,7 +45170,7 @@ if (process.argv[2] === "report") {
 }
 async function main() {
   const outcome = await new Promise((resolve) => {
-    const { unmount, waitUntilExit } = render_default(/* @__PURE__ */ import_react33.default.createElement(App2, {
+    const { unmount, waitUntilExit } = render_default(/* @__PURE__ */ import_react34.default.createElement(App2, {
       onDone: (o) => resolved(o)
     }), {
       exitOnCtrlC: true

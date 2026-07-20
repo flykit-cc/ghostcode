@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { aggregateEvents, fmtDuration, toCsv } from "./report.ts";
+import { aggregateEvents, fmtDuration, groupRows, toCsv } from "./report.ts";
 
 const P = "/Users/kaiomp/Documents/GitHub/ghostcode";
 const ev = (o: object) => JSON.stringify(o);
@@ -76,4 +76,38 @@ test("same basename, different paths stay separate rows", () => {
   expect(rows).toHaveLength(2);
   expect(rows[0].attendedMs).toBe(60_000);
   expect(rows[1].attendedMs).toBe(60_000);
+});
+
+describe("groupRows", () => {
+  const mk = (date: string, project: string, attended: number, agent = 0) => ({
+    date,
+    project,
+    attendedMs: attended,
+    agentMs: agent,
+    sessions: 1,
+    tokens: { input: 1, output: 2, cache_read: 3, cache_write: 4 },
+  });
+
+  test("groups by project and sorts by time spent", () => {
+    const out = groupRows(
+      [mk("2026-07-19", "a", 60_000), mk("2026-07-20", "a", 60_000), mk("2026-07-20", "b", 300_000)],
+      "project",
+    );
+    expect(out.map((r) => r.project)).toEqual(["b", "a"]);
+    expect(out[1].attendedMs).toBe(120_000);
+    expect(out[1].sessions).toBe(2);
+    expect(out[1].tokens.input).toBe(2);
+  });
+
+  test("groups by date chronologically", () => {
+    const out = groupRows(
+      [mk("2026-07-20", "a", 60_000), mk("2026-07-19", "b", 60_000)],
+      "date",
+    );
+    expect(out.map((r) => r.date)).toEqual(["2026-07-19", "2026-07-20"]);
+  });
+
+  test("empty input yields empty output", () => {
+    expect(groupRows([], "project")).toEqual([]);
+  });
 });

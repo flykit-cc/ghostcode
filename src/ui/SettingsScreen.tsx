@@ -11,6 +11,7 @@ const STATE_PATH = join(homedir(), ".config/ghostcode/state.json");
 const REPO = "github.com/flykit-cc/ghostcode";
 
 export type SettingsAction =
+  | "reports"
   | "projectRoots"
   | "apiKeys"
   | "clearRecents"
@@ -51,6 +52,11 @@ export function SettingsScreen({
   onCancel,
 }: Props) {
   const items: Item[] = [
+    {
+      id: "reports",
+      label: "Work reports",
+      sublabel: "time + tokens per project",
+    },
     {
       id: "projectRoots",
       label: "Project roots",

@@ -4,6 +4,7 @@ import {
   appendFileSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   statSync,
   writeFileSync,
@@ -58,6 +59,30 @@ export function readTrackerConfig(): {
     return { ...defaults, ...(cfg.tracker || {}) };
   } catch {
     return defaults;
+  }
+}
+
+/**
+ * Event lines from the last `days` daily logs (today counts as day 1).
+ * Shared by `ghostcode report` and the in-app Reports screen.
+ */
+export function readEventLines(days: number): string[] {
+  try {
+    if (!existsSync(TRACKER_DIR)) return [];
+    const cutoff = new Date(Date.now() - (days - 1) * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const lines: string[] = [];
+    for (const f of readdirSync(TRACKER_DIR).sort()) {
+      const m = /^events-(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(f);
+      if (!m || m[1] < cutoff) continue;
+      lines.push(
+        ...readFileSync(join(TRACKER_DIR, f), "utf8").split("\n").filter(Boolean),
+      );
+    }
+    return lines;
+  } catch {
+    return [];
   }
 }
 
