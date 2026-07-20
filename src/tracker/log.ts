@@ -50,8 +50,15 @@ export function readTrackerConfig(): {
   presenceIdleSec: number;
   graceSec: number;
   audio: boolean;
+  dailyTargetHours: number;
 } {
-  const defaults = { presenceIdleSec: 180, graceSec: 60, audio: true };
+  const defaults = {
+    presenceIdleSec: 180,
+    graceSec: 60,
+    audio: true,
+    // Reference workday for report percentages — "how full was the day".
+    dailyTargetHours: 8,
+  };
   try {
     const cfg = JSON.parse(
       readFileSync(join(homedir(), ".config/ghostcode/config.json"), "utf8"),

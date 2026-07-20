@@ -37392,6 +37392,20 @@ import {
 } from "node:fs";
 import { homedir as homedir4 } from "node:os";
 import { join as join5 } from "node:path";
+function readTrackerConfig() {
+  const defaults2 = {
+    presenceIdleSec: 180,
+    graceSec: 60,
+    audio: true,
+    dailyTargetHours: 8
+  };
+  try {
+    const cfg = JSON.parse(readFileSync4(join5(homedir4(), ".config/ghostcode/config.json"), "utf8"));
+    return { ...defaults2, ...cfg.tracker || {} };
+  } catch {
+    return defaults2;
+  }
+}
 function readEventLines(days) {
   try {
     if (!existsSync4(TRACKER_DIR))
@@ -43999,7 +44013,10 @@ function ReportScreen({ onDone }) {
     input: a.input + r.tokens.input,
     output: a.output + r.tokens.output
   }), { attended: 0, agent: 0, sessions: 0, input: 0, output: 0 });
-  const grandTotal = Math.max(1, totals.attended);
+  const targetHours = readTrackerConfig().dailyTargetHours;
+  const dayMs = targetHours * 3600000;
+  const rowBudget = grouping === "date" ? dayMs : dayMs * range2.days;
+  const totalBudget = dayMs * range2.days;
   const labelOf = (r) => grouping === "project" ? r.project : r.date;
   const labelW = Math.max(7, ...rows.map((r) => labelOf(r).length));
   return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
@@ -44016,13 +44033,13 @@ function ReportScreen({ onDone }) {
     bold: i === rangeIdx
   }, `  ${r.label}  `)), /* @__PURE__ */ import_react30.default.createElement(Text, {
     dimColor: true
-  }, `   grouped by ${grouping}`)), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+  }, `   grouped by ${grouping} · % of ${targetHours}h/day`)), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
     flexDirection: "column",
     marginTop: 1
   }, rows.length === 0 && /* @__PURE__ */ import_react30.default.createElement(Text, {
     dimColor: true
   }, "   no tracked work in this range — press W on a project to track it"), rows.map((r) => {
-    const share = r.attendedMs / grandTotal;
+    const share = r.attendedMs / rowBudget;
     const filled = Math.min(BAR_WIDTH, r.attendedMs > 0 ? Math.max(1, Math.round(share * BAR_WIDTH)) : 0);
     const pct = Math.round(share * 100);
     return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
@@ -44046,6 +44063,8 @@ function ReportScreen({ onDone }) {
   }, /* @__PURE__ */ import_react30.default.createElement(Text, {
     bold: true
   }, `total  ${fmtDuration(totals.attended)}`), /* @__PURE__ */ import_react30.default.createElement(Text, {
+    dimColor: true
+  }, `  (${Math.round(totals.attended / totalBudget * 100)}% of ${range2.days === 1 ? `${targetHours}h` : `${range2.days}×${targetHours}h`})`), /* @__PURE__ */ import_react30.default.createElement(Text, {
     dimColor: true
   }, `   agent ${fmtDuration(totals.agent)} · ${totals.sessions} sessions · ↑${fmtTok2(totals.input)} ↓${fmtTok2(totals.output)}`)), /* @__PURE__ */ import_react30.default.createElement(Footer, {
     hint: "←→ range · G group by project/date · esc back"

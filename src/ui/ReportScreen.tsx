@@ -3,7 +3,7 @@ import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
 import { Footer } from "./Footer.tsx";
 import { ACCENT, SELECTION_BG } from "./theme.ts";
-import { readEventLines } from "../tracker/log.ts";
+import { readEventLines, readTrackerConfig } from "../tracker/log.ts";
 import {
   aggregateEvents,
   fmtDuration,
@@ -61,9 +61,14 @@ export function ReportScreen({ onDone }: Props) {
     }),
     { attended: 0, agent: 0, sessions: 0, input: 0, output: 0 },
   );
-  // Bars show each row's SHARE OF TOTAL, not share of the biggest row —
-  // max-scaling always paints the top row full, which reads as "100%".
-  const grandTotal = Math.max(1, totals.attended);
+  // Bars measure against a workday target ("how full was the day"), which is
+  // an absolute reference — sharing the total told you nothing about how much
+  // you actually worked. Grouped by date, each row is ONE day, so its budget
+  // is one target day; grouped by project, a row spans the whole range.
+  const targetHours = readTrackerConfig().dailyTargetHours;
+  const dayMs = targetHours * 3_600_000;
+  const rowBudget = grouping === "date" ? dayMs : dayMs * range.days;
+  const totalBudget = dayMs * range.days;
   const labelOf = (r: ReportRow) => (grouping === "project" ? r.project : r.date);
   const labelW = Math.max(7, ...rows.map((r) => labelOf(r).length));
 
@@ -84,7 +89,9 @@ export function ReportScreen({ onDone }: Props) {
             {`  ${r.label}  `}
           </Text>
         ))}
-        <Text dimColor>{`   grouped by ${grouping}`}</Text>
+        <Text dimColor>
+          {`   grouped by ${grouping} · % of ${targetHours}h/day`}
+        </Text>
       </Box>
 
       <Box flexDirection="column" marginTop={1}>
@@ -94,7 +101,7 @@ export function ReportScreen({ onDone }: Props) {
           </Text>
         )}
         {rows.map((r) => {
-          const share = r.attendedMs / grandTotal;
+          const share = r.attendedMs / rowBudget;
           const filled = Math.min(
             BAR_WIDTH,
             // Any non-zero slice keeps at least one cell so it stays visible.
@@ -121,6 +128,9 @@ export function ReportScreen({ onDone }: Props) {
       {rows.length > 0 && (
         <Box marginTop={1} paddingX={1}>
           <Text bold>{`total  ${fmtDuration(totals.attended)}`}</Text>
+          <Text dimColor>
+            {`  (${Math.round((totals.attended / totalBudget) * 100)}% of ${range.days === 1 ? `${targetHours}h` : `${range.days}×${targetHours}h`})`}
+          </Text>
           <Text dimColor>
             {`   agent ${fmtDuration(totals.agent)} · ${totals.sessions} sessions · ↑${fmtTok(totals.input)} ↓${fmtTok(totals.output)}`}
           </Text>

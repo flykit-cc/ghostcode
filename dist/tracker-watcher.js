@@ -116,7 +116,12 @@ function appendEvent(obj) {
   } catch {}
 }
 function readTrackerConfig() {
-  const defaults = { presenceIdleSec: 180, graceSec: 60, audio: true };
+  const defaults = {
+    presenceIdleSec: 180,
+    graceSec: 60,
+    audio: true,
+    dailyTargetHours: 8
+  };
   try {
     const cfg = JSON.parse(readFileSync(join(homedir(), ".config/ghostcode/config.json"), "utf8"));
     return { ...defaults, ...cfg.tracker || {} };
