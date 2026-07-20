@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
+import { Footer } from "./Footer.tsx";
+import { ACCENT, SELECTION_BG } from "./theme.ts";
 
 export type ListItem = { id: string; label: string; sublabel?: string };
 
@@ -37,35 +39,42 @@ export function ListPicker({
   });
 
   // Two-column layout: labels left-aligned to the widest label, sublabels
-  // follow after a fixed 2-space gutter. No `·` separator — the gap does the
-  // work visually and rows line up like the Dashboard.
+  // dim after a fixed 2-space gutter.
   const maxLabelLen = Math.max(...items.map((it) => it.label.length));
-  const contents = items.map((it, i) => {
-    const arrow = i === index ? "▸" : " ";
-    const label = it.label.padEnd(maxLabelLen);
-    const sub = it.sublabel ? `  ${it.sublabel}` : "";
-    return ` ${arrow}  ${label}${sub}`;
-  });
-  const maxLen = Math.max(...contents.map((c) => c.length));
-  const padded = contents.map((c) => c + " ".repeat(maxLen - c.length) + "  ");
+  const maxSubLen = Math.max(
+    0,
+    ...items.map((it) => (it.sublabel ? it.sublabel.length : 0)),
+  );
 
   return (
     <Box flexDirection="column">
-      <Header title={title} hint="↑↓ · ⏎ select · esc back" />
+      <Header title={title} />
       {items.map((it, i) => {
         const active = i === index;
+        const bg = active ? SELECTION_BG : undefined;
         return (
           <Box key={it.id}>
+            <Text backgroundColor={bg} color={ACCENT} bold={active}>
+              {` ${active ? "▸" : " "}  `}
+            </Text>
             <Text
-              backgroundColor={active ? "magenta" : undefined}
+              backgroundColor={bg}
               color={active ? "white" : undefined}
               bold={active}
             >
-              {padded[i]}
+              {it.label.padEnd(maxLabelLen)}
+            </Text>
+            <Text
+              backgroundColor={bg}
+              color={active ? "white" : undefined}
+              dimColor
+            >
+              {`  ${(it.sublabel ?? "").padEnd(maxSubLen)}  `}
             </Text>
           </Box>
         );
       })}
+      <Footer hint="↑↓ · ⏎ select · esc back" />
     </Box>
   );
 }

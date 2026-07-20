@@ -1,14 +1,16 @@
 import React, { useMemo, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
-import { fuzzyFilter, projectDisplay, type Project } from "../projects.ts";
+import { Footer } from "./Footer.tsx";
+import { ACCENT, SELECTION_BG } from "./theme.ts";
+import { fuzzyFilter, type Project } from "../projects.ts";
 
 type Props = {
   projects: Project[];
   recents: string[];
   favorites: string[];
   getColor: (path: string) => string | undefined;
-  // Saved-setup label for a project ("GLM · Bypass"), shown as a dim suffix.
+  // Saved-setup label for a project ("GLM · Bypass"), shown as a dim column.
   getSetup: (path: string) => string | undefined;
   onPick: (p: Project) => void;
   // Digit keys 1-9: launch that row immediately with its saved defaults.
@@ -19,6 +21,14 @@ type Props = {
 };
 
 const HEIGHT = 12;
+
+type Group = "favorites" | "recent" | "projects";
+
+const GROUP_LABEL: Record<Group, string> = {
+  favorites: "FAVORITES",
+  recent: "RECENT",
+  projects: "PROJECTS",
+};
 
 export function ProjectPicker({
   projects,
@@ -99,102 +109,100 @@ export function ProjectPicker({
   const favSet = new Set(favorites);
   const recentSet = new Set(recents);
 
-  // Pre-compute row lengths so the active-row highlight and tint blocks line
-  // up to the same width. Each row is split into [prefix][name][tail] so the
-  // per-project bg tint can wrap just the name, like the CC statusline pill.
+  const groupOf = (p: Project): Group =>
+    favSet.has(p.path)
+      ? "favorites"
+      : recentSet.has(p.path)
+        ? "recent"
+        : "projects";
+
+  // Column layout: [arrow digit star] [▎tint] [name] [parent] [setup].
+  // Widths are computed over the visible slice so columns line up exactly.
   type RowSpec = {
     p: Project;
     active: boolean;
-    isFav: boolean;
-    isRecent: boolean;
+    group: Group;
     color?: string;
-    prefix: string;
+    arrow: string;
+    digit: string;
+    star: string;
     name: string;
-    suffix: string;
-    totalLen: number;
+    parent: string;
+    setup: string;
   };
   const rows: RowSpec[] = visible.map((p, i) => {
     const realIndex = Math.max(0, start) + i;
     const active = realIndex === index;
-    const isFav = favSet.has(p.path);
-    const isRecent = !isFav && !query && recentSet.has(p.path);
-    const marker = isFav ? "★" : isRecent ? "⏱" : " ";
-    const arrow = active ? "▸" : " ";
-    // Digit column only when the filter is empty (digits type into the query
-    // otherwise) — mirrors the jump-launch keybind above.
-    const digit = !query && realIndex < 9 ? String(realIndex + 1) : " ";
-    const prefix = ` ${arrow} ${digit} ${marker} `;
-    const name = ` ${projectDisplay(p)} `;
-    const setup = getSetup(p.path);
-    const suffix = setup ? ` ${setup} ` : "";
     return {
       p,
       active,
-      isFav,
-      isRecent,
+      group: groupOf(p),
       color: getColor(p.path),
-      prefix,
-      name,
-      suffix,
-      totalLen: prefix.length + name.length + suffix.length,
+      arrow: active ? "▸" : " ",
+      digit: !query && realIndex < 9 ? String(realIndex + 1) : " ",
+      star: favSet.has(p.path) ? "★" : " ",
+      name: p.name,
+      parent: p.parent,
+      setup: getSetup(p.path) ?? "",
     };
   });
-  const maxLen = rows.length ? Math.max(...rows.map((r) => r.totalLen)) : 0;
+  const nameW = Math.max(0, ...rows.map((r) => r.name.length)) + 2;
+  const parentW = Math.max(0, ...rows.map((r) => r.parent.length)) + 2;
+  const setupW = Math.max(0, ...rows.map((r) => r.setup.length));
 
   return (
     <Box flexDirection="column">
-      <Header
-        title="Project"
-        hint="type to filter · ↑↓ · ⏎ open · 1-9 launch · ⇧F favorite · ⇧C tint · esc"
-      />
-      <Box>
-        <Text color="magenta"> </Text>
-        <Text>{query}</Text>
-        <Text color="magenta">▏</Text>
+      <Header title="Project" />
+      <Box paddingX={1}>
+        <Text color={ACCENT}>❯ </Text>
+        {query ? <Text>{query}</Text> : <Text dimColor>type to filter</Text>}
+        <Text color={ACCENT}>▏</Text>
       </Box>
       <Box flexDirection="column" marginTop={1}>
-        {rows.length === 0 && <Text dimColor> no matches</Text>}
-        {rows.map((r) => {
-          const tail = " ".repeat(maxLen - r.totalLen + 2);
-          const activeBg = r.active ? "magenta" : undefined;
-          const activeFg = r.active ? "white" : undefined;
-          // Inactive coloring priority: favorite (yellow) > recent (cyan) > default.
-          const inactiveFg = r.isFav
-            ? "yellow"
-            : r.isRecent
-              ? "cyan"
-              : undefined;
-          // The 2-space tint pill is rendered as its OWN Text with its own bg,
-          // so it stays visible even when the rest of the row gets the
-          // magenta active-selection bg. No tint set = empty 2-space gap
-          // (keeps alignment across rows).
+        {rows.length === 0 && <Text dimColor>   no matches</Text>}
+        {rows.map((r, i) => {
+          const showLabel =
+            !query && (i === 0 || rows[i - 1].group !== r.group);
+          const bg = r.active ? SELECTION_BG : undefined;
+          const fg = r.active ? "white" : undefined;
           return (
-            <Box key={r.p.path}>
-              <Text
-                backgroundColor={activeBg}
-                color={activeFg ?? inactiveFg}
-                bold={r.active}
-              >
-                {r.prefix}
-              </Text>
-              <Text backgroundColor={r.color}>{"  "}</Text>
-              <Text
-                backgroundColor={r.active ? "magenta" : r.color}
-                color={r.active ? "white" : r.color ? "white" : inactiveFg}
-                bold={r.active}
-              >
-                {r.name}
-              </Text>
-              <Text backgroundColor={activeBg} color={activeFg} dimColor={!r.active}>
-                {r.suffix}
-              </Text>
-              <Text backgroundColor={activeBg} color={activeFg}>
-                {tail}
-              </Text>
+            <Box key={r.p.path} flexDirection="column">
+              {showLabel && (
+                <Box marginTop={i === 0 ? 0 : 0}>
+                  <Text dimColor>{`      ${GROUP_LABEL[r.group]}`}</Text>
+                </Box>
+              )}
+              <Box>
+                <Text backgroundColor={bg} color={ACCENT} bold={r.active}>
+                  {` ${r.arrow} `}
+                </Text>
+                <Text backgroundColor={bg} dimColor>
+                  {`${r.digit} `}
+                </Text>
+                <Text backgroundColor={bg} color="yellow">
+                  {`${r.star} `}
+                </Text>
+                {/* Slim tint bar — carries the project color without painting
+                    the whole row like a pill. */}
+                <Text backgroundColor={bg} color={r.color}>
+                  {r.color ? "▎" : " "}
+                </Text>
+                <Text backgroundColor={bg} color={fg} bold={r.active}>
+                  {` ${r.name.padEnd(nameW)}`}
+                </Text>
+                <Text backgroundColor={bg} color={fg} dimColor>
+                  {r.parent.padEnd(parentW)}
+                </Text>
+                <Text backgroundColor={bg} color={fg} dimColor>
+                  {r.setup.padEnd(setupW)}
+                </Text>
+                <Text backgroundColor={bg}>{"  "}</Text>
+              </Box>
             </Box>
           );
         })}
       </Box>
+      <Footer hint="type to filter · ↑↓ · ⏎ open · 1-9 launch · ⇧F favorite · ⇧C tint · esc" />
     </Box>
   );
 }

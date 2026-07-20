@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
+import { Footer } from "./Footer.tsx";
+import { ACCENT, SELECTION_BG } from "./theme.ts";
 import { SecretPrompt } from "./SecretPrompt.tsx";
 import type { Provider } from "../providers.ts";
 import { hasSecret, setSecret, deleteSecret } from "../keychain.ts";
@@ -67,28 +69,29 @@ export function ApiKeysScreen({ providers, onDone }: Props) {
 
   return (
     <Box flexDirection="column">
-      <Header
-        title="API keys"
-        hint="↑↓ · ⏎ set/replace · D delete · esc back"
-      />
+      <Header title="API keys" />
       {rows.length === 0 && (
         <Text dimColor> no providers require a key</Text>
       )}
       {rows.map((r, i) => {
         const active = i === index;
         const label = r.label.padEnd(maxLabelLen);
+        const bg = active ? SELECTION_BG : undefined;
         return (
           <Box key={r.provider.id}>
+            <Text backgroundColor={bg} color={ACCENT} bold={active}>
+              {` ${active ? "▸" : " "}  `}
+            </Text>
             <Text
-              backgroundColor={active ? "magenta" : undefined}
+              backgroundColor={bg}
               color={active ? "white" : undefined}
               bold={active}
             >
-              {` ${active ? "▸" : " "}  ${label}  `}
+              {`${label}  `}
             </Text>
             <Text
-              backgroundColor={active ? "magenta" : undefined}
-              color={active ? "white" : r.set ? "green" : "yellow"}
+              backgroundColor={bg}
+              color={r.set ? "green" : "yellow"}
               bold={active}
             >
               {r.status}
@@ -96,11 +99,12 @@ export function ApiKeysScreen({ providers, onDone }: Props) {
           </Box>
         );
       })}
-      <Box marginTop={1}>
+      <Box marginTop={1} paddingX={1}>
         <Text dimColor>
           Keys are stored in macOS Keychain under account "ghostcode".
         </Text>
       </Box>
+      <Footer hint="↑↓ · ⏎ set/replace · D delete · esc back" />
     </Box>
   );
 }

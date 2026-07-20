@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
+import { Footer } from "./Footer.tsx";
+import { ACCENT } from "./theme.ts";
 
 type Props = {
   providerLabel: string;
@@ -26,20 +28,18 @@ export function SecretPrompt({ providerLabel, onSubmit, onCancel }: Props) {
 
   return (
     <Box flexDirection="column">
-      <Header
-        title={`${providerLabel} — API key`}
-        hint="paste · ⏎ save to Keychain · esc cancel"
-      />
-      <Box>
-        <Text color="magenta"> </Text>
+      <Header title={`${providerLabel} — API key`} />
+      <Box paddingX={1}>
+        <Text color={ACCENT}>❯ </Text>
         <Text>{"•".repeat(Math.min(value.length, 40))}</Text>
-        <Text color="magenta">▏</Text>
+        <Text color={ACCENT}>▏</Text>
       </Box>
-      <Box marginTop={1}>
+      <Box marginTop={1} paddingX={1}>
         <Text dimColor>
           Stored encrypted in macOS Keychain. You'll only be asked once.
         </Text>
       </Box>
+      <Footer hint="paste · ⏎ save to Keychain · esc cancel" />
     </Box>
   );
 }

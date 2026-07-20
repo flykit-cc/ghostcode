@@ -37561,7 +37561,7 @@ var init_report_cli = __esm(() => {
 });
 
 // src/index.tsx
-var import_react32 = __toESM(require_react(), 1);
+var import_react33 = __toESM(require_react(), 1);
 
 // node_modules/ink/build/render.js
 import { Stream } from "node:stream";
@@ -43080,26 +43080,20 @@ var import_react20 = __toESM(require_react(), 1);
 // node_modules/ink/build/hooks/use-focus-manager.js
 var import_react21 = __toESM(require_react(), 1);
 // src/ui/App.tsx
-var import_react31 = __toESM(require_react(), 1);
+var import_react32 = __toESM(require_react(), 1);
 import { rmSync } from "node:fs";
 import { homedir as homedir6 } from "node:os";
 import { join as join7 } from "node:path";
 
 // src/ui/Dashboard.tsx
-var import_react23 = __toESM(require_react(), 1);
+var import_react24 = __toESM(require_react(), 1);
 
 // src/ui/Header.tsx
 var import_react22 = __toESM(require_react(), 1);
 
-// src/logo.ts
-var LOGO = `\x1B[38;2;101;78;163m \x1B[38;2;105;81;164m█\x1B[38;2;109;84;165m▀\x1B[38;2;112;86;166m▀\x1B[38;2;116;89;167m \x1B[38;2;120;92;168m█\x1B[38;2;124;95;169m \x1B[38;2;128;97;170m█\x1B[38;2;131;100;171m \x1B[38;2;135;103;173m█\x1B[38;2;139;106;174m▀\x1B[38;2;143;108;175m█\x1B[38;2;147;111;176m \x1B[38;2;150;114;177m█\x1B[38;2;154;117;178m▀\x1B[38;2;158;120;179m▀\x1B[38;2;162;122;180m \x1B[38;2;166;125;181m▀\x1B[38;2;169;128;182m█\x1B[38;2;173;131;183m▀\x1B[38;2;177;133;184m \x1B[38;2;181;136;185m█\x1B[38;2;185;139;186m▀\x1B[38;2;188;142;187m▀\x1B[38;2;192;145;188m \x1B[38;2;196;147;189m█\x1B[38;2;200;150;190m▀\x1B[38;2;204;153;192m█\x1B[38;2;207;156;193m \x1B[38;2;211;158;194m█\x1B[38;2;215;161;195m▀\x1B[38;2;219;164;196m▄\x1B[38;2;223;167;197m \x1B[38;2;226;169;198m█\x1B[38;2;230;172;199m▀\x1B[38;2;234;175;200m▀\x1B[39m
-\x1B[38;2;101;78;163m \x1B[38;2;105;81;164m█\x1B[38;2;109;84;165m▄\x1B[38;2;112;86;166m█\x1B[38;2;116;89;167m \x1B[38;2;120;92;168m█\x1B[38;2;124;95;169m▀\x1B[38;2;128;97;170m█\x1B[38;2;131;100;171m \x1B[38;2;135;103;173m█\x1B[38;2;139;106;174m▄\x1B[38;2;143;108;175m█\x1B[38;2;147;111;176m \x1B[38;2;150;114;177m▄\x1B[38;2;154;117;178m▄\x1B[38;2;158;120;179m█\x1B[38;2;162;122;180m \x1B[38;2;166;125;181m \x1B[38;2;169;128;182m█\x1B[38;2;173;131;183m \x1B[38;2;177;133;184m \x1B[38;2;181;136;185m█\x1B[38;2;185;139;186m▄\x1B[38;2;188;142;187m▄\x1B[38;2;192;145;188m \x1B[38;2;196;147;189m█\x1B[38;2;200;150;190m▄\x1B[38;2;204;153;192m█\x1B[38;2;207;156;193m \x1B[38;2;211;158;194m█\x1B[38;2;215;161;195m▄\x1B[38;2;219;164;196m▀\x1B[38;2;223;167;197m \x1B[38;2;226;169;198m█\x1B[38;2;230;172;199m█\x1B[38;2;234;175;200m▄\x1B[39m`;
-var FLYKIT_LOGO = [
-  "▐▘▜   ▌ ▘▗       ",
-  "▜▘▐ ▌▌▙▘▌▜▘  ▛▘▛▘",
-  "▐ ▐▖▙▌▛▖▌▐▖▗ ▙▖▙▖",
-  "    ▄▌           "
-];
+// src/ui/theme.ts
+var ACCENT = "magenta";
+var SELECTION_BG = "#3a4150";
 // package.json
 var package_default = {
   name: "@flykit/ghostcode",
@@ -43140,46 +43134,38 @@ var package_default = {
 };
 
 // src/ui/Header.tsx
-var CC_ORANGE = "#d97757";
-var CC_ART = [" ▐▛███▜▌   ", "▝▜█████▛▘  ", "  ▘▘ ▝▝    "];
-function Header({ title, hint }) {
+function Header({ title }) {
   return /* @__PURE__ */ import_react22.default.createElement(Box_default, {
-    borderStyle: "round",
-    borderColor: "magenta",
-    paddingX: 2,
-    marginBottom: 1,
-    flexDirection: "column"
-  }, /* @__PURE__ */ import_react22.default.createElement(Box_default, {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  }, /* @__PURE__ */ import_react22.default.createElement(Box_default, {
-    flexDirection: "row",
-    alignItems: "center"
-  }, /* @__PURE__ */ import_react22.default.createElement(Text, null, LOGO), /* @__PURE__ */ import_react22.default.createElement(Box_default, {
-    marginLeft: 2,
-    flexDirection: "column"
-  }, CC_ART.map((line, i) => /* @__PURE__ */ import_react22.default.createElement(Text, {
-    key: i,
-    color: CC_ORANGE
-  }, line)))), /* @__PURE__ */ import_react22.default.createElement(Box_default, {
     flexDirection: "column",
-    alignItems: "flex-end"
-  }, FLYKIT_LOGO.map((line, i) => /* @__PURE__ */ import_react22.default.createElement(Text, {
-    key: i,
-    color: "white"
-  }, line)))), title ? /* @__PURE__ */ import_react22.default.createElement(Box_default, {
-    marginTop: 1
-  }, /* @__PURE__ */ import_react22.default.createElement(Text, {
-    bold: true
-  }, title)) : null, /* @__PURE__ */ import_react22.default.createElement(Text, {
+    marginBottom: 1
+  }, /* @__PURE__ */ import_react22.default.createElement(Box_default, {
+    justifyContent: "space-between",
+    paddingX: 1
+  }, /* @__PURE__ */ import_react22.default.createElement(Box_default, null, /* @__PURE__ */ import_react22.default.createElement(Text, null, "\uD83D\uDC7B "), /* @__PURE__ */ import_react22.default.createElement(Text, {
+    bold: true,
+    color: ACCENT
+  }, "GHOSTCODE"), title ? /* @__PURE__ */ import_react22.default.createElement(import_react22.default.Fragment, null, /* @__PURE__ */ import_react22.default.createElement(Text, {
     dimColor: true
-  }, hint), /* @__PURE__ */ import_react22.default.createElement(Box_default, {
-    justifyContent: "flex-end",
-    marginTop: 1
-  }, /* @__PURE__ */ import_react22.default.createElement(Text, {
+  }, "  ▸ "), /* @__PURE__ */ import_react22.default.createElement(Text, null, title)) : null), /* @__PURE__ */ import_react22.default.createElement(Text, {
     dimColor: true
-  }, "v", package_default.version, " · by @kaiomp")));
+  }, "flykit.cc · v", package_default.version)), /* @__PURE__ */ import_react22.default.createElement(Box_default, {
+    borderStyle: "single",
+    borderTop: false,
+    borderLeft: false,
+    borderRight: false,
+    borderDimColor: true
+  }));
+}
+
+// src/ui/Footer.tsx
+var import_react23 = __toESM(require_react(), 1);
+function Footer({ hint }) {
+  return /* @__PURE__ */ import_react23.default.createElement(Box_default, {
+    marginTop: 1,
+    paddingX: 1
+  }, /* @__PURE__ */ import_react23.default.createElement(Text, {
+    dimColor: true
+  }, hint));
 }
 
 // src/ui/Dashboard.tsx
@@ -43321,7 +43307,7 @@ function Dashboard({
     "settings",
     "launch"
   ];
-  const [localFocus, setLocalFocus] = import_react23.useState(values2.project ? fields.indexOf("launch") : fields.indexOf("project"));
+  const [localFocus, setLocalFocus] = import_react24.useState(values2.project ? fields.indexOf("launch") : fields.indexOf("project"));
   const focus = focusField !== undefined ? Math.max(0, fields.indexOf(focusField)) : localFocus;
   const safeFocus = Math.min(focus, fields.length - 1);
   const setFocus = (next) => {
@@ -43382,49 +43368,60 @@ function Dashboard({
   addRow("track", "Track work", trackingOn ? "◉ tracking time + tokens" : "○ off");
   addRow("settings", "Settings", "⚙ roots, clear state…");
   const rowMaxLen = Math.max(...specs.map((s) => s.prefix.length + s.value.length));
-  return /* @__PURE__ */ import_react23.default.createElement(Box_default, {
+  return /* @__PURE__ */ import_react24.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react23.default.createElement(Header, {
-    title: "",
-    hint: "↑↓ move · ⏎ edit/launch · space toggle · W track work · esc shell"
+  }, /* @__PURE__ */ import_react24.default.createElement(Header, {
+    title: "Dashboard"
   }), specs.map((s) => {
     const active = fields[safeFocus] === s.id;
     const tail2 = " ".repeat(rowMaxLen - s.prefix.length - s.value.length + 2);
-    const activeBg = active ? "magenta" : undefined;
+    const activeBg = active ? SELECTION_BG : undefined;
     const activeFg = active ? "white" : undefined;
-    return /* @__PURE__ */ import_react23.default.createElement(Box_default, {
+    return /* @__PURE__ */ import_react24.default.createElement(Box_default, {
       key: s.id
-    }, /* @__PURE__ */ import_react23.default.createElement(Text, {
+    }, /* @__PURE__ */ import_react24.default.createElement(Text, {
+      backgroundColor: activeBg,
+      color: ACCENT,
+      bold: active
+    }, s.prefix.slice(0, 4)), /* @__PURE__ */ import_react24.default.createElement(Text, {
+      backgroundColor: activeBg,
+      color: activeFg,
+      dimColor: !active
+    }, s.prefix.slice(4)), /* @__PURE__ */ import_react24.default.createElement(Text, {
+      backgroundColor: activeBg,
+      color: s.tintColor
+    }, s.tintColor ? "▎" : " "), /* @__PURE__ */ import_react24.default.createElement(Text, {
       backgroundColor: activeBg,
       color: activeFg,
       bold: active
-    }, s.prefix), /* @__PURE__ */ import_react23.default.createElement(Text, {
-      backgroundColor: s.tintColor ?? activeBg
-    }, "  "), /* @__PURE__ */ import_react23.default.createElement(Text, {
-      backgroundColor: active ? "magenta" : s.tintColor,
-      color: active ? "white" : s.tintColor ? "white" : undefined,
-      bold: active
-    }, s.value), /* @__PURE__ */ import_react23.default.createElement(Text, {
+    }, s.value), /* @__PURE__ */ import_react24.default.createElement(Text, {
       backgroundColor: activeBg,
       color: activeFg
     }, tail2));
-  }), /* @__PURE__ */ import_react23.default.createElement(Box_default, {
+  }), /* @__PURE__ */ import_react24.default.createElement(Box_default, {
     marginTop: 1
-  }, /* @__PURE__ */ import_react23.default.createElement(Text, {
+  }, /* @__PURE__ */ import_react24.default.createElement(Text, {
     backgroundColor: launchActive ? "green" : undefined,
     color: launchActive ? "black" : canLaunch ? "green" : undefined,
     bold: true,
     dimColor: !canLaunch && !launchActive
-  }, ` ${launchActive ? "▸" : " "}  [ Launch ] `)), recents.length > 0 && /* @__PURE__ */ import_react23.default.createElement(Box_default, {
+  }, ` ${launchActive ? "▸" : " "}  [ Launch ] `)), recents.length > 0 && /* @__PURE__ */ import_react24.default.createElement(Box_default, {
     marginTop: 1
-  }, /* @__PURE__ */ import_react23.default.createElement(Text, {
+  }, /* @__PURE__ */ import_react24.default.createElement(Text, {
     dimColor: true
-  }, "recent:", " ", recents.slice(0, 5).map((r) => basename2(r.path)).join(" · "))));
+  }, "recent:", " ", recents.slice(0, 5).map((r) => basename2(r.path)).join(" · "))), /* @__PURE__ */ import_react24.default.createElement(Footer, {
+    hint: "↑↓ move · ⏎ edit/launch · space toggle · W track · esc shell"
+  }));
 }
 
 // src/ui/ProjectPicker.tsx
-var import_react24 = __toESM(require_react(), 1);
+var import_react25 = __toESM(require_react(), 1);
 var HEIGHT = 12;
+var GROUP_LABEL = {
+  favorites: "FAVORITES",
+  recent: "RECENT",
+  projects: "PROJECTS"
+};
 function ProjectPicker({
   projects,
   recents,
@@ -43437,9 +43434,9 @@ function ProjectPicker({
   onCycleColor,
   onCancel
 }) {
-  const [query, setQuery] = import_react24.useState("");
-  const [index, setIndex] = import_react24.useState(0);
-  const ordered = import_react24.useMemo(() => {
+  const [query, setQuery] = import_react25.useState("");
+  const [index, setIndex] = import_react25.useState(0);
+  const ordered = import_react25.useMemo(() => {
     if (query)
       return fuzzyFilter(projects, query);
     const favSet2 = new Set(favorites);
@@ -43494,75 +43491,89 @@ function ProjectPicker({
   const visible = ordered.slice(Math.max(0, start), start + HEIGHT);
   const favSet = new Set(favorites);
   const recentSet = new Set(recents);
+  const groupOf = (p) => favSet.has(p.path) ? "favorites" : recentSet.has(p.path) ? "recent" : "projects";
   const rows = visible.map((p, i) => {
     const realIndex = Math.max(0, start) + i;
     const active = realIndex === index;
-    const isFav = favSet.has(p.path);
-    const isRecent = !isFav && !query && recentSet.has(p.path);
-    const marker = isFav ? "★" : isRecent ? "⏱" : " ";
-    const arrow = active ? "▸" : " ";
-    const digit = !query && realIndex < 9 ? String(realIndex + 1) : " ";
-    const prefix = ` ${arrow} ${digit} ${marker} `;
-    const name = ` ${projectDisplay(p)} `;
-    const setup = getSetup(p.path);
-    const suffix = setup ? ` ${setup} ` : "";
     return {
       p,
       active,
-      isFav,
-      isRecent,
+      group: groupOf(p),
       color: getColor(p.path),
-      prefix,
-      name,
-      suffix,
-      totalLen: prefix.length + name.length + suffix.length
+      arrow: active ? "▸" : " ",
+      digit: !query && realIndex < 9 ? String(realIndex + 1) : " ",
+      star: favSet.has(p.path) ? "★" : " ",
+      name: p.name,
+      parent: p.parent,
+      setup: getSetup(p.path) ?? ""
     };
   });
-  const maxLen = rows.length ? Math.max(...rows.map((r) => r.totalLen)) : 0;
-  return /* @__PURE__ */ import_react24.default.createElement(Box_default, {
+  const nameW = Math.max(0, ...rows.map((r) => r.name.length)) + 2;
+  const parentW = Math.max(0, ...rows.map((r) => r.parent.length)) + 2;
+  const setupW = Math.max(0, ...rows.map((r) => r.setup.length));
+  return /* @__PURE__ */ import_react25.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react24.default.createElement(Header, {
-    title: "Project",
-    hint: "type to filter · ↑↓ · ⏎ open · 1-9 launch · ⇧F favorite · ⇧C tint · esc"
-  }), /* @__PURE__ */ import_react24.default.createElement(Box_default, null, /* @__PURE__ */ import_react24.default.createElement(Text, {
-    color: "magenta"
-  }, " "), /* @__PURE__ */ import_react24.default.createElement(Text, null, query), /* @__PURE__ */ import_react24.default.createElement(Text, {
-    color: "magenta"
-  }, "▏")), /* @__PURE__ */ import_react24.default.createElement(Box_default, {
+  }, /* @__PURE__ */ import_react25.default.createElement(Header, {
+    title: "Project"
+  }), /* @__PURE__ */ import_react25.default.createElement(Box_default, {
+    paddingX: 1
+  }, /* @__PURE__ */ import_react25.default.createElement(Text, {
+    color: ACCENT
+  }, "❯ "), query ? /* @__PURE__ */ import_react25.default.createElement(Text, null, query) : /* @__PURE__ */ import_react25.default.createElement(Text, {
+    dimColor: true
+  }, "type to filter"), /* @__PURE__ */ import_react25.default.createElement(Text, {
+    color: ACCENT
+  }, "▏")), /* @__PURE__ */ import_react25.default.createElement(Box_default, {
     flexDirection: "column",
     marginTop: 1
-  }, rows.length === 0 && /* @__PURE__ */ import_react24.default.createElement(Text, {
+  }, rows.length === 0 && /* @__PURE__ */ import_react25.default.createElement(Text, {
     dimColor: true
-  }, " no matches"), rows.map((r) => {
-    const tail2 = " ".repeat(maxLen - r.totalLen + 2);
-    const activeBg = r.active ? "magenta" : undefined;
-    const activeFg = r.active ? "white" : undefined;
-    const inactiveFg = r.isFav ? "yellow" : r.isRecent ? "cyan" : undefined;
-    return /* @__PURE__ */ import_react24.default.createElement(Box_default, {
-      key: r.p.path
-    }, /* @__PURE__ */ import_react24.default.createElement(Text, {
-      backgroundColor: activeBg,
-      color: activeFg ?? inactiveFg,
+  }, "   no matches"), rows.map((r, i) => {
+    const showLabel = !query && (i === 0 || rows[i - 1].group !== r.group);
+    const bg = r.active ? SELECTION_BG : undefined;
+    const fg = r.active ? "white" : undefined;
+    return /* @__PURE__ */ import_react25.default.createElement(Box_default, {
+      key: r.p.path,
+      flexDirection: "column"
+    }, showLabel && /* @__PURE__ */ import_react25.default.createElement(Box_default, {
+      marginTop: i === 0 ? 0 : 0
+    }, /* @__PURE__ */ import_react25.default.createElement(Text, {
+      dimColor: true
+    }, `      ${GROUP_LABEL[r.group]}`)), /* @__PURE__ */ import_react25.default.createElement(Box_default, null, /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg,
+      color: ACCENT,
       bold: r.active
-    }, r.prefix), /* @__PURE__ */ import_react24.default.createElement(Text, {
-      backgroundColor: r.color
-    }, "  "), /* @__PURE__ */ import_react24.default.createElement(Text, {
-      backgroundColor: r.active ? "magenta" : r.color,
-      color: r.active ? "white" : r.color ? "white" : inactiveFg,
+    }, ` ${r.arrow} `), /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg,
+      dimColor: true
+    }, `${r.digit} `), /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg,
+      color: "yellow"
+    }, `${r.star} `), /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg,
+      color: r.color
+    }, r.color ? "▎" : " "), /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg,
+      color: fg,
       bold: r.active
-    }, r.name), /* @__PURE__ */ import_react24.default.createElement(Text, {
-      backgroundColor: activeBg,
-      color: activeFg,
-      dimColor: !r.active
-    }, r.suffix), /* @__PURE__ */ import_react24.default.createElement(Text, {
-      backgroundColor: activeBg,
-      color: activeFg
-    }, tail2));
-  })));
+    }, ` ${r.name.padEnd(nameW)}`), /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg,
+      color: fg,
+      dimColor: true
+    }, r.parent.padEnd(parentW)), /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg,
+      color: fg,
+      dimColor: true
+    }, r.setup.padEnd(setupW)), /* @__PURE__ */ import_react25.default.createElement(Text, {
+      backgroundColor: bg
+    }, "  ")));
+  })), /* @__PURE__ */ import_react25.default.createElement(Footer, {
+    hint: "type to filter · ↑↓ · ⏎ open · 1-9 launch · ⇧F favorite · ⇧C tint · esc"
+  }));
 }
 
 // src/ui/ListPicker.tsx
-var import_react25 = __toESM(require_react(), 1);
+var import_react26 = __toESM(require_react(), 1);
 function ListPicker({
   title,
   items,
@@ -43570,7 +43581,7 @@ function ListPicker({
   onPick,
   onCancel
 }) {
-  const [index, setIndex] = import_react25.useState(() => {
+  const [index, setIndex] = import_react26.useState(() => {
     const i = items.findIndex((it) => it.id === initialId);
     return i >= 0 ? i : 0;
   });
@@ -43589,35 +43600,38 @@ function ListPicker({
       return setIndex((i) => Math.min(items.length - 1, i + 1));
   });
   const maxLabelLen = Math.max(...items.map((it) => it.label.length));
-  const contents = items.map((it, i) => {
-    const arrow = i === index ? "▸" : " ";
-    const label = it.label.padEnd(maxLabelLen);
-    const sub = it.sublabel ? `  ${it.sublabel}` : "";
-    return ` ${arrow}  ${label}${sub}`;
-  });
-  const maxLen = Math.max(...contents.map((c) => c.length));
-  const padded = contents.map((c) => c + " ".repeat(maxLen - c.length) + "  ");
-  return /* @__PURE__ */ import_react25.default.createElement(Box_default, {
+  const maxSubLen = Math.max(0, ...items.map((it) => it.sublabel ? it.sublabel.length : 0));
+  return /* @__PURE__ */ import_react26.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react25.default.createElement(Header, {
-    title,
-    hint: "↑↓ · ⏎ select · esc back"
+  }, /* @__PURE__ */ import_react26.default.createElement(Header, {
+    title
   }), items.map((it, i) => {
     const active = i === index;
-    return /* @__PURE__ */ import_react25.default.createElement(Box_default, {
+    const bg = active ? SELECTION_BG : undefined;
+    return /* @__PURE__ */ import_react26.default.createElement(Box_default, {
       key: it.id
-    }, /* @__PURE__ */ import_react25.default.createElement(Text, {
-      backgroundColor: active ? "magenta" : undefined,
+    }, /* @__PURE__ */ import_react26.default.createElement(Text, {
+      backgroundColor: bg,
+      color: ACCENT,
+      bold: active
+    }, ` ${active ? "▸" : " "}  `), /* @__PURE__ */ import_react26.default.createElement(Text, {
+      backgroundColor: bg,
       color: active ? "white" : undefined,
       bold: active
-    }, padded[i]));
+    }, it.label.padEnd(maxLabelLen)), /* @__PURE__ */ import_react26.default.createElement(Text, {
+      backgroundColor: bg,
+      color: active ? "white" : undefined,
+      dimColor: true
+    }, `  ${(it.sublabel ?? "").padEnd(maxSubLen)}  `));
+  }), /* @__PURE__ */ import_react26.default.createElement(Footer, {
+    hint: "↑↓ · ⏎ select · esc back"
   }));
 }
 
 // src/ui/SecretPrompt.tsx
-var import_react26 = __toESM(require_react(), 1);
+var import_react27 = __toESM(require_react(), 1);
 function SecretPrompt({ providerLabel, onSubmit, onCancel }) {
-  const [value, setValue] = import_react26.useState("");
+  const [value, setValue] = import_react27.useState("");
   use_input_default((input, key) => {
     if (key.escape)
       return onCancel();
@@ -43633,24 +43647,28 @@ function SecretPrompt({ providerLabel, onSubmit, onCancel }) {
     if (input && !key.ctrl && !key.meta)
       setValue((v) => v + input);
   });
-  return /* @__PURE__ */ import_react26.default.createElement(Box_default, {
+  return /* @__PURE__ */ import_react27.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react26.default.createElement(Header, {
-    title: `${providerLabel} — API key`,
-    hint: "paste · ⏎ save to Keychain · esc cancel"
-  }), /* @__PURE__ */ import_react26.default.createElement(Box_default, null, /* @__PURE__ */ import_react26.default.createElement(Text, {
-    color: "magenta"
-  }, " "), /* @__PURE__ */ import_react26.default.createElement(Text, null, "•".repeat(Math.min(value.length, 40))), /* @__PURE__ */ import_react26.default.createElement(Text, {
-    color: "magenta"
-  }, "▏")), /* @__PURE__ */ import_react26.default.createElement(Box_default, {
-    marginTop: 1
-  }, /* @__PURE__ */ import_react26.default.createElement(Text, {
+  }, /* @__PURE__ */ import_react27.default.createElement(Header, {
+    title: `${providerLabel} — API key`
+  }), /* @__PURE__ */ import_react27.default.createElement(Box_default, {
+    paddingX: 1
+  }, /* @__PURE__ */ import_react27.default.createElement(Text, {
+    color: ACCENT
+  }, "❯ "), /* @__PURE__ */ import_react27.default.createElement(Text, null, "•".repeat(Math.min(value.length, 40))), /* @__PURE__ */ import_react27.default.createElement(Text, {
+    color: ACCENT
+  }, "▏")), /* @__PURE__ */ import_react27.default.createElement(Box_default, {
+    marginTop: 1,
+    paddingX: 1
+  }, /* @__PURE__ */ import_react27.default.createElement(Text, {
     dimColor: true
-  }, "Stored encrypted in macOS Keychain. You'll only be asked once.")));
+  }, "Stored encrypted in macOS Keychain. You'll only be asked once.")), /* @__PURE__ */ import_react27.default.createElement(Footer, {
+    hint: "paste · ⏎ save to Keychain · esc cancel"
+  }));
 }
 
 // src/ui/SettingsScreen.tsx
-var import_react27 = __toESM(require_react(), 1);
+var import_react28 = __toESM(require_react(), 1);
 import { homedir as homedir2 } from "node:os";
 import { join as join3 } from "node:path";
 var STATE_PATH = join3(homedir2(), ".config/ghostcode/state.json");
@@ -43701,7 +43719,7 @@ function SettingsScreen({
     },
     { id: "back", label: "← Back to dashboard" }
   ];
-  const [index, setIndex] = import_react27.useState(() => {
+  const [index, setIndex] = import_react28.useState(() => {
     const i = initialIndex ?? 0;
     return Math.min(Math.max(0, i), items.length - 1);
   });
@@ -43724,43 +43742,46 @@ function SettingsScreen({
       return update2(Math.min(items.length - 1, index + 1));
   });
   const maxLabelLen = Math.max(...items.map((it) => it.label.length));
-  const contents = items.map((it, i) => {
-    const arrow = i === index ? "▸" : " ";
-    const label = it.label.padEnd(maxLabelLen);
-    const sub = it.sublabel ? `  ${it.sublabel}` : "";
-    return ` ${arrow}  ${label}${sub}`;
-  });
-  const maxLen = Math.max(...contents.map((c) => c.length));
-  return /* @__PURE__ */ import_react27.default.createElement(Box_default, {
+  const maxSubLen = Math.max(0, ...items.map((it) => it.sublabel ? it.sublabel.length : 0));
+  return /* @__PURE__ */ import_react28.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react27.default.createElement(Header, {
-    title: "Settings",
-    hint: "↑↓ · ⏎ select · esc back"
+  }, /* @__PURE__ */ import_react28.default.createElement(Header, {
+    title: "Settings"
   }), items.map((it, i) => {
     const active = i === index;
-    const content = contents[i] + " ".repeat(maxLen - contents[i].length) + "  ";
     const danger = it.id === "resetAll";
-    return /* @__PURE__ */ import_react27.default.createElement(Box_default, {
+    const bg = active ? danger ? "red" : SELECTION_BG : undefined;
+    return /* @__PURE__ */ import_react28.default.createElement(Box_default, {
       key: it.id
-    }, /* @__PURE__ */ import_react27.default.createElement(Text, {
-      backgroundColor: active ? danger ? "red" : "magenta" : undefined,
+    }, /* @__PURE__ */ import_react28.default.createElement(Text, {
+      backgroundColor: bg,
+      color: ACCENT,
+      bold: active
+    }, ` ${active ? "▸" : " "}  `), /* @__PURE__ */ import_react28.default.createElement(Text, {
+      backgroundColor: bg,
       color: active ? "white" : danger ? "red" : undefined,
       bold: active
-    }, content));
-  }), /* @__PURE__ */ import_react27.default.createElement(Box_default, {
+    }, it.label.padEnd(maxLabelLen)), /* @__PURE__ */ import_react28.default.createElement(Text, {
+      backgroundColor: bg,
+      color: active ? "white" : undefined,
+      dimColor: true
+    }, `  ${(it.sublabel ?? "").padEnd(maxSubLen)}  `));
+  }), /* @__PURE__ */ import_react28.default.createElement(Box_default, {
     flexDirection: "column",
     marginTop: 1
-  }, /* @__PURE__ */ import_react27.default.createElement(Text, {
+  }, /* @__PURE__ */ import_react28.default.createElement(Text, {
     dimColor: true
-  }, "   state:  " + STATE_PATH.replace(homedir2(), "~")), /* @__PURE__ */ import_react27.default.createElement(Text, {
+  }, "   state:  " + STATE_PATH.replace(homedir2(), "~")), /* @__PURE__ */ import_react28.default.createElement(Text, {
     dimColor: true
-  }, package_default.name, " v", package_default.version, " · MIT · ", REPO), /* @__PURE__ */ import_react27.default.createElement(Text, {
+  }, package_default.name, " v", package_default.version, " · MIT · ", REPO), /* @__PURE__ */ import_react28.default.createElement(Text, {
     dimColor: true
-  }, "Not affiliated with Anthropic or Ghostty. No telemetry.")));
+  }, "Not affiliated with Anthropic or Ghostty. No telemetry.")), /* @__PURE__ */ import_react28.default.createElement(Footer, {
+    hint: "↑↓ · ⏎ select · esc back"
+  }));
 }
 
 // src/ui/ProjectRootsScreen.tsx
-var import_react28 = __toESM(require_react(), 1);
+var import_react29 = __toESM(require_react(), 1);
 import { existsSync as existsSync3, readFileSync as readFileSync3, writeFileSync as writeFileSync2, mkdirSync as mkdirSync2 } from "node:fs";
 import { homedir as homedir3 } from "node:os";
 import { dirname as dirname2, join as join4 } from "node:path";
@@ -43793,10 +43814,10 @@ function renderRoot(p) {
   return p.replace(homedir3(), "~");
 }
 function ProjectRootsScreen({ onDone }) {
-  const [roots, setRoots] = import_react28.useState(() => loadRootsRaw());
-  const [index, setIndex] = import_react28.useState(0);
-  const [mode, setMode] = import_react28.useState({ kind: "list" });
-  const [buffer, setBuffer] = import_react28.useState("");
+  const [roots, setRoots] = import_react29.useState(() => loadRootsRaw());
+  const [index, setIndex] = import_react29.useState(0);
+  const [mode, setMode] = import_react29.useState({ kind: "list" });
+  const [buffer, setBuffer] = import_react29.useState("");
   use_input_default((input, key) => {
     if (mode.kind === "list") {
       if (key.escape)
@@ -43860,38 +43881,40 @@ function ProjectRootsScreen({ onDone }) {
     }
   });
   const hint = mode.kind === "list" ? "↑↓ move · ⏎ edit · N add · D delete · esc back" : "type path · ⏎ save · esc cancel";
-  return /* @__PURE__ */ import_react28.default.createElement(Box_default, {
+  return /* @__PURE__ */ import_react29.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react28.default.createElement(Header, {
-    title: "Project roots",
-    hint
-  }), roots.length === 0 && mode.kind === "list" && /* @__PURE__ */ import_react28.default.createElement(Text, {
+  }, /* @__PURE__ */ import_react29.default.createElement(Header, {
+    title: "Project roots"
+  }), roots.length === 0 && mode.kind === "list" && /* @__PURE__ */ import_react29.default.createElement(Text, {
     dimColor: true
   }, " no roots — press N to add"), roots.map((r, i) => {
     const active = mode.kind === "list" && i === index;
     const editing = mode.kind === "edit" && mode.index === i;
     const display = editing ? buffer : renderRoot(r);
     const missing = !existsSync3(expandHome2(r));
-    return /* @__PURE__ */ import_react28.default.createElement(Box_default, {
+    return /* @__PURE__ */ import_react29.default.createElement(Box_default, {
       key: r + i
-    }, /* @__PURE__ */ import_react28.default.createElement(Text, {
-      backgroundColor: active ? "magenta" : undefined,
+    }, /* @__PURE__ */ import_react29.default.createElement(Text, {
+      backgroundColor: active ? SELECTION_BG : undefined,
       color: active ? "white" : missing ? "yellow" : undefined,
       bold: active
     }, ` ${active ? "▸" : " "}  ${display}${editing ? "▏" : ""}${missing ? "  (missing)" : ""}`));
-  }), mode.kind === "add" && /* @__PURE__ */ import_react28.default.createElement(Box_default, null, /* @__PURE__ */ import_react28.default.createElement(Text, {
+  }), mode.kind === "add" && /* @__PURE__ */ import_react29.default.createElement(Box_default, null, /* @__PURE__ */ import_react29.default.createElement(Text, {
     color: "magenta"
-  }, " + "), /* @__PURE__ */ import_react28.default.createElement(Text, null, buffer), /* @__PURE__ */ import_react28.default.createElement(Text, {
+  }, " + "), /* @__PURE__ */ import_react29.default.createElement(Text, null, buffer), /* @__PURE__ */ import_react29.default.createElement(Text, {
     color: "magenta"
-  }, "▏")), /* @__PURE__ */ import_react28.default.createElement(Box_default, {
-    marginTop: 1
-  }, /* @__PURE__ */ import_react28.default.createElement(Text, {
+  }, "▏")), /* @__PURE__ */ import_react29.default.createElement(Box_default, {
+    marginTop: 1,
+    paddingX: 1
+  }, /* @__PURE__ */ import_react29.default.createElement(Text, {
     dimColor: true
-  }, "Stored in ", CONFIG_PATH2.replace(homedir3(), "~"))));
+  }, "Stored in ", CONFIG_PATH2.replace(homedir3(), "~"))), /* @__PURE__ */ import_react29.default.createElement(Footer, {
+    hint
+  }));
 }
 
 // src/ui/ApiKeysScreen.tsx
-var import_react29 = __toESM(require_react(), 1);
+var import_react30 = __toESM(require_react(), 1);
 
 // src/keychain.ts
 import { spawnSync } from "node:child_process";
@@ -43917,9 +43940,9 @@ function hasSecret(service) {
 // src/ui/ApiKeysScreen.tsx
 function ApiKeysScreen({ providers, onDone }) {
   const withSecret = providers.filter((p) => !!p.secret);
-  const [index, setIndex] = import_react29.useState(0);
-  const [mode, setMode] = import_react29.useState({ kind: "list" });
-  const [rev, setRev] = import_react29.useState(0);
+  const [index, setIndex] = import_react30.useState(0);
+  const [mode, setMode] = import_react30.useState({ kind: "list" });
+  const [rev, setRev] = import_react30.useState(0);
   use_input_default((input, key) => {
     if (mode.kind !== "list")
       return;
@@ -43944,7 +43967,7 @@ function ApiKeysScreen({ providers, onDone }) {
     }
   });
   if (mode.kind === "edit" && mode.provider.secret) {
-    return /* @__PURE__ */ import_react29.default.createElement(SecretPrompt, {
+    return /* @__PURE__ */ import_react30.default.createElement(SecretPrompt, {
       providerLabel: mode.provider.label,
       onSubmit: (v) => {
         setSecret(mode.provider.secret.keychainService, v);
@@ -43964,36 +43987,43 @@ function ApiKeysScreen({ providers, onDone }) {
     };
   });
   const maxLabelLen = Math.max(4, ...rows.map((r) => r.label.length));
-  return /* @__PURE__ */ import_react29.default.createElement(Box_default, {
+  return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react29.default.createElement(Header, {
-    title: "API keys",
-    hint: "↑↓ · ⏎ set/replace · D delete · esc back"
-  }), rows.length === 0 && /* @__PURE__ */ import_react29.default.createElement(Text, {
+  }, /* @__PURE__ */ import_react30.default.createElement(Header, {
+    title: "API keys"
+  }), rows.length === 0 && /* @__PURE__ */ import_react30.default.createElement(Text, {
     dimColor: true
   }, " no providers require a key"), rows.map((r, i) => {
     const active = i === index;
     const label = r.label.padEnd(maxLabelLen);
-    return /* @__PURE__ */ import_react29.default.createElement(Box_default, {
+    const bg = active ? SELECTION_BG : undefined;
+    return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
       key: r.provider.id
-    }, /* @__PURE__ */ import_react29.default.createElement(Text, {
-      backgroundColor: active ? "magenta" : undefined,
+    }, /* @__PURE__ */ import_react30.default.createElement(Text, {
+      backgroundColor: bg,
+      color: ACCENT,
+      bold: active
+    }, ` ${active ? "▸" : " "}  `), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      backgroundColor: bg,
       color: active ? "white" : undefined,
       bold: active
-    }, ` ${active ? "▸" : " "}  ${label}  `), /* @__PURE__ */ import_react29.default.createElement(Text, {
-      backgroundColor: active ? "magenta" : undefined,
-      color: active ? "white" : r.set ? "green" : "yellow",
+    }, `${label}  `), /* @__PURE__ */ import_react30.default.createElement(Text, {
+      backgroundColor: bg,
+      color: r.set ? "green" : "yellow",
       bold: active
     }, r.status));
-  }), /* @__PURE__ */ import_react29.default.createElement(Box_default, {
-    marginTop: 1
-  }, /* @__PURE__ */ import_react29.default.createElement(Text, {
+  }), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+    marginTop: 1,
+    paddingX: 1
+  }, /* @__PURE__ */ import_react30.default.createElement(Text, {
     dimColor: true
-  }, 'Keys are stored in macOS Keychain under account "ghostcode".')));
+  }, 'Keys are stored in macOS Keychain under account "ghostcode".')), /* @__PURE__ */ import_react30.default.createElement(Footer, {
+    hint: "↑↓ · ⏎ set/replace · D delete · esc back"
+  }));
 }
 
 // src/ui/ConfirmScreen.tsx
-var import_react30 = __toESM(require_react(), 1);
+var import_react31 = __toESM(require_react(), 1);
 function ConfirmScreen({
   title,
   message,
@@ -44003,7 +44033,7 @@ function ConfirmScreen({
   onConfirm,
   onCancel
 }) {
-  const [index, setIndex] = import_react30.useState(1);
+  const [index, setIndex] = import_react31.useState(1);
   use_input_default((input, key) => {
     if (key.escape)
       return onCancel();
@@ -44021,27 +44051,28 @@ function ConfirmScreen({
     }
   });
   const items = [confirmLabel, cancelLabel];
-  const activeColor = danger ? "red" : "magenta";
-  return /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+  const activeColor = danger ? "red" : ACCENT;
+  return /* @__PURE__ */ import_react31.default.createElement(Box_default, {
     flexDirection: "column"
-  }, /* @__PURE__ */ import_react30.default.createElement(Header, {
-    title,
-    hint: "Y/N · ←→ · ⏎ select · esc cancel"
-  }), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
-    marginTop: 1
-  }, /* @__PURE__ */ import_react30.default.createElement(Text, null, " ", message)), /* @__PURE__ */ import_react30.default.createElement(Box_default, {
+  }, /* @__PURE__ */ import_react31.default.createElement(Header, {
+    title
+  }), /* @__PURE__ */ import_react31.default.createElement(Box_default, {
+    marginTop: 1,
+    paddingX: 1
+  }, /* @__PURE__ */ import_react31.default.createElement(Text, null, message)), /* @__PURE__ */ import_react31.default.createElement(Box_default, {
     marginTop: 1
   }, items.map((label, i) => {
     const active = i === index;
-    const bg = active ? i === 0 ? activeColor : "gray" : undefined;
-    const fg = active ? i === 0 && danger ? "white" : "white" : undefined;
-    return /* @__PURE__ */ import_react30.default.createElement(Text, {
+    const bg = active ? i === 0 ? activeColor : SELECTION_BG : undefined;
+    return /* @__PURE__ */ import_react31.default.createElement(Text, {
       key: label,
       backgroundColor: bg,
-      color: fg,
+      color: active ? "white" : undefined,
       bold: active
     }, `  ${active ? "▸" : " "} ${label}  `);
-  })));
+  })), /* @__PURE__ */ import_react31.default.createElement(Footer, {
+    hint: "Y/N · ←→ · ⏎ select · esc cancel"
+  }));
 }
 
 // src/providers.ts
@@ -44364,21 +44395,21 @@ function modelItems(provider) {
 }
 function App2({ onDone }) {
   const { exit } = use_app_default();
-  const providers = import_react31.useMemo(() => loadProviders(), []);
-  const vsCodeAvailable = import_react31.useMemo(() => detectVSCode(), []);
-  const roots = import_react31.useMemo(() => loadRoots(), []);
-  const [projectRev, setProjectRev] = import_react31.useState(0);
-  const projects = import_react31.useMemo(() => discoverProjects(), [projectRev]);
-  const [state, setState] = import_react31.useState(() => loadState());
+  const providers = import_react32.useMemo(() => loadProviders(), []);
+  const vsCodeAvailable = import_react32.useMemo(() => detectVSCode(), []);
+  const roots = import_react32.useMemo(() => loadRoots(), []);
+  const [projectRev, setProjectRev] = import_react32.useState(0);
+  const projects = import_react32.useMemo(() => discoverProjects(), [projectRev]);
+  const [state, setState] = import_react32.useState(() => loadState());
   const defaultProvider = providers.find((p) => p.id === state.lastProviderId) ?? providers[0];
   const defaultMode = state.lastMode ?? "bypassPermissions";
-  const initialProject = import_react31.useMemo(() => {
+  const initialProject = import_react32.useMemo(() => {
     const lastPath = state.recents[0];
     if (!lastPath)
       return null;
     return projects.find((p) => p.path === lastPath) ?? null;
   }, [projects, state.recents]);
-  const [values2, setValues] = import_react31.useState(() => {
+  const [values2, setValues] = import_react32.useState(() => {
     const saved = initialProject ? state.perProject[initialProject.path] : undefined;
     return {
       project: initialProject,
@@ -44389,13 +44420,13 @@ function App2({ onDone }) {
       openVSCode: saved?.vscode ?? false
     };
   });
-  const [mode, setMode] = import_react31.useState("project");
-  const [wizardActive, setWizardActive] = import_react31.useState(true);
-  const [pendingProvider, setPendingProvider] = import_react31.useState(null);
-  const [dashFocus, setDashFocus] = import_react31.useState("launch");
-  const [settingsIndex, setSettingsIndex] = import_react31.useState(0);
-  const [confirmSpec, setConfirmSpec] = import_react31.useState(null);
-  const [secretsRev, setSecretsRev] = import_react31.useState(0);
+  const [mode, setMode] = import_react32.useState("project");
+  const [wizardActive, setWizardActive] = import_react32.useState(true);
+  const [pendingProvider, setPendingProvider] = import_react32.useState(null);
+  const [dashFocus, setDashFocus] = import_react32.useState("launch");
+  const [settingsIndex, setSettingsIndex] = import_react32.useState(0);
+  const [confirmSpec, setConfirmSpec] = import_react32.useState(null);
+  const [secretsRev, setSecretsRev] = import_react32.useState(0);
   const recents = state.recents.map((p) => projects.find((pr) => pr.path === p)).filter((p) => !!p);
   function finish(outcome) {
     exit();
@@ -44519,7 +44550,7 @@ function App2({ onDone }) {
     }
   }
   if (mode === "project") {
-    return /* @__PURE__ */ import_react31.default.createElement(ProjectPicker, {
+    return /* @__PURE__ */ import_react32.default.createElement(ProjectPicker, {
       projects,
       recents: state.recents,
       favorites: state.favorites,
@@ -44577,7 +44608,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "provider") {
-    return /* @__PURE__ */ import_react31.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
       title: "Provider",
       items: providers.map((p) => {
         let sublabel = p.sublabel;
@@ -44622,7 +44653,7 @@ function App2({ onDone }) {
   if (mode === "model") {
     const items = modelItems(values2.provider);
     const initialId = values2.model || (values2.provider.supportsClaudeFlags ? "" : items[0]?.id);
-    return /* @__PURE__ */ import_react31.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
       title: "Model",
       items,
       initialId,
@@ -44645,7 +44676,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "effort") {
-    return /* @__PURE__ */ import_react31.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
       title: "Effort",
       items: EFFORT_ITEMS,
       initialId: values2.effort,
@@ -44664,7 +44695,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "mode") {
-    return /* @__PURE__ */ import_react31.default.createElement(ListPicker, {
+    return /* @__PURE__ */ import_react32.default.createElement(ListPicker, {
       title: "Permission mode",
       items: MODE_ITEMS,
       initialId: values2.mode,
@@ -44681,7 +44712,7 @@ function App2({ onDone }) {
   }
   if (mode === "settings") {
     const apiKeysSet = providers.filter((p) => p.secret && hasSecret(p.secret.keychainService)).length;
-    return /* @__PURE__ */ import_react31.default.createElement(SettingsScreen, {
+    return /* @__PURE__ */ import_react32.default.createElement(SettingsScreen, {
       roots,
       counts: {
         recents: state.recents.length,
@@ -44700,7 +44731,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "projectRoots") {
-    return /* @__PURE__ */ import_react31.default.createElement(ProjectRootsScreen, {
+    return /* @__PURE__ */ import_react32.default.createElement(ProjectRootsScreen, {
       onDone: () => {
         setProjectRev((r) => r + 1);
         setMode("settings");
@@ -44708,7 +44739,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "apiKeys") {
-    return /* @__PURE__ */ import_react31.default.createElement(ApiKeysScreen, {
+    return /* @__PURE__ */ import_react32.default.createElement(ApiKeysScreen, {
       providers,
       onDone: () => {
         setSecretsRev((r) => r + 1);
@@ -44717,7 +44748,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "confirm" && confirmSpec) {
-    return /* @__PURE__ */ import_react31.default.createElement(ConfirmScreen, {
+    return /* @__PURE__ */ import_react32.default.createElement(ConfirmScreen, {
       title: confirmSpec.title,
       message: confirmSpec.message,
       danger: confirmSpec.danger,
@@ -44729,7 +44760,7 @@ function App2({ onDone }) {
     });
   }
   if (mode === "secret" && pendingProvider?.secret) {
-    return /* @__PURE__ */ import_react31.default.createElement(SecretPrompt, {
+    return /* @__PURE__ */ import_react32.default.createElement(SecretPrompt, {
       providerLabel: pendingProvider.label,
       onSubmit: (v) => {
         setSecret(pendingProvider.secret.keychainService, v);
@@ -44768,7 +44799,7 @@ function App2({ onDone }) {
       }
     });
   }
-  return /* @__PURE__ */ import_react31.default.createElement(Dashboard, {
+  return /* @__PURE__ */ import_react32.default.createElement(Dashboard, {
     values: values2,
     recents,
     vsCodeAvailable,
@@ -44995,7 +45026,7 @@ if (process.argv[2] === "report") {
 }
 async function main() {
   const outcome = await new Promise((resolve) => {
-    const { unmount, waitUntilExit } = render_default(/* @__PURE__ */ import_react32.default.createElement(App2, {
+    const { unmount, waitUntilExit } = render_default(/* @__PURE__ */ import_react33.default.createElement(App2, {
       onDone: (o) => resolved(o)
     }), {
       exitOnCtrlC: true

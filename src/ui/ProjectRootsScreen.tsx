@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
+import { Footer } from "./Footer.tsx";
+import { SELECTION_BG } from "./theme.ts";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -120,7 +122,7 @@ export function ProjectRootsScreen({ onDone }: Props) {
 
   return (
     <Box flexDirection="column">
-      <Header title="Project roots" hint={hint} />
+      <Header title="Project roots" />
       {roots.length === 0 && mode.kind === "list" && (
         <Text dimColor> no roots — press N to add</Text>
       )}
@@ -132,7 +134,7 @@ export function ProjectRootsScreen({ onDone }: Props) {
         return (
           <Box key={r + i}>
             <Text
-              backgroundColor={active ? "magenta" : undefined}
+              backgroundColor={active ? SELECTION_BG : undefined}
               color={active ? "white" : missing ? "yellow" : undefined}
               bold={active}
             >
@@ -148,11 +150,12 @@ export function ProjectRootsScreen({ onDone }: Props) {
           <Text color="magenta">▏</Text>
         </Box>
       )}
-      <Box marginTop={1}>
+      <Box marginTop={1} paddingX={1}>
         <Text dimColor>
           Stored in {CONFIG_PATH.replace(homedir(), "~")}
         </Text>
       </Box>
+      <Footer hint={hint} />
     </Box>
   );
 }

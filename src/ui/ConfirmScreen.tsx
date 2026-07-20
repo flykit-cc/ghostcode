@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
+import { Footer } from "./Footer.tsx";
+import { ACCENT, SELECTION_BG } from "./theme.ts";
 
 type Props = {
   title: string;
@@ -37,24 +39,23 @@ export function ConfirmScreen({
   });
 
   const items = [confirmLabel, cancelLabel];
-  const activeColor = danger ? "red" : "magenta";
+  const activeColor = danger ? "red" : ACCENT;
 
   return (
     <Box flexDirection="column">
-      <Header title={title} hint="Y/N · ←→ · ⏎ select · esc cancel" />
-      <Box marginTop={1}>
-        <Text> {message}</Text>
+      <Header title={title} />
+      <Box marginTop={1} paddingX={1}>
+        <Text>{message}</Text>
       </Box>
       <Box marginTop={1}>
         {items.map((label, i) => {
           const active = i === index;
-          const bg = active ? (i === 0 ? activeColor : "gray") : undefined;
-          const fg = active ? (i === 0 && danger ? "white" : "white") : undefined;
+          const bg = active ? (i === 0 ? activeColor : SELECTION_BG) : undefined;
           return (
             <Text
               key={label}
               backgroundColor={bg}
-              color={fg}
+              color={active ? "white" : undefined}
               bold={active}
             >
               {`  ${active ? "▸" : " "} ${label}  `}
@@ -62,6 +63,7 @@ export function ConfirmScreen({
           );
         })}
       </Box>
+      <Footer hint="Y/N · ←→ · ⏎ select · esc cancel" />
     </Box>
   );
 }

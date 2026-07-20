@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { Header } from "./Header.tsx";
+import { Footer } from "./Footer.tsx";
+import { ACCENT, SELECTION_BG } from "./theme.ts";
 import { basename } from "node:path";
 import { projectDisplay, type Project } from "../projects.ts";
 import type { Provider } from "../providers.ts";
@@ -189,31 +191,32 @@ export function Dashboard({
 
   return (
     <Box flexDirection="column">
-      <Header
-        title=""
-        hint="↑↓ move · ⏎ edit/launch · space toggle · W track work · esc shell"
-      />
+      <Header title="Dashboard" />
       {specs.map((s) => {
         const active = fields[safeFocus] === s.id;
         const tail = " ".repeat(
           rowMaxLen - s.prefix.length - s.value.length + 2,
         );
-        const activeBg = active ? "magenta" : undefined;
+        const activeBg = active ? SELECTION_BG : undefined;
         const activeFg = active ? "white" : undefined;
         return (
           <Box key={s.id}>
-            <Text backgroundColor={activeBg} color={activeFg} bold={active}>
-              {s.prefix}
+            <Text backgroundColor={activeBg} color={ACCENT} bold={active}>
+              {s.prefix.slice(0, 4)}
             </Text>
-            {/* Pill slot is ALWAYS 2 chars wide for uniform row alignment —
-                bg is the tint color when set, otherwise matches the row's
-                active-or-default bg so it disappears. */}
-            <Text backgroundColor={s.tintColor ?? activeBg}>{"  "}</Text>
             <Text
-              backgroundColor={active ? "magenta" : s.tintColor}
-              color={active ? "white" : s.tintColor ? "white" : undefined}
-              bold={active}
+              backgroundColor={activeBg}
+              color={activeFg}
+              dimColor={!active}
             >
+              {s.prefix.slice(4)}
+            </Text>
+            {/* Slim tint bar — carries the project color without painting the
+                row like a pill. Always 1 char + space for uniform alignment. */}
+            <Text backgroundColor={activeBg} color={s.tintColor}>
+              {s.tintColor ? "▎" : " "}
+            </Text>
+            <Text backgroundColor={activeBg} color={activeFg} bold={active}>
               {s.value}
             </Text>
             <Text backgroundColor={activeBg} color={activeFg}>
@@ -243,6 +246,7 @@ export function Dashboard({
           </Text>
         </Box>
       )}
+      <Footer hint="↑↓ move · ⏎ edit/launch · space toggle · W track · esc shell" />
     </Box>
   );
 }
