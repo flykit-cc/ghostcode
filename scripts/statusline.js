@@ -34,9 +34,37 @@ function sh(cmd, opts = {}) {
   } catch { return ''; }
 }
 
-const projectRoot = sh('git rev-parse --show-toplevel', { cwd }) || cwd;
+// Git facts cache — CC re-runs this script every second, but branch/remote/
+// issue numbers change rarely. Cache them per-cwd for 10s so steady-state
+// refreshes spawn zero git subprocesses; timers still tick every render.
+const crypto = require('crypto');
+const SL_CACHE_DIR = path.join(os.homedir(), '.config/ghostcode/.slcache');
+const slCachePath = path.join(
+  SL_CACHE_DIR,
+  crypto.createHash('md5').update(cwd).digest('hex').slice(0, 12) + '.json'
+);
+let gitFacts = null;
+try {
+  const c = JSON.parse(fs.readFileSync(slCachePath, 'utf8'));
+  if (Date.now() - c.at < 10_000) gitFacts = c;
+} catch {}
+if (!gitFacts) {
+  const root = sh('git rev-parse --show-toplevel', { cwd }) || cwd;
+  gitFacts = {
+    at: Date.now(),
+    root,
+    br: sh('git branch --show-current', { cwd: root }),
+    remote: sh('git remote get-url origin', { cwd: root }),
+    log: sh('git log -20 --format=%s', { cwd: root }),
+  };
+  try {
+    fs.mkdirSync(SL_CACHE_DIR, { recursive: true });
+    fs.writeFileSync(slCachePath, JSON.stringify(gitFacts));
+  } catch {}
+}
+const projectRoot = gitFacts.root;
 const projectName = path.basename(projectRoot);
-const branch = worktree.branch || sh('git branch --show-current', { cwd: projectRoot });
+const branch = worktree.branch || gitFacts.br;
 
 let tint = '';
 try {
@@ -55,7 +83,7 @@ function toHttpsUrl(remote) {
   if (m) return m[1];
   return '';
 }
-const ghUrl = toHttpsUrl(sh('git remote get-url origin', { cwd: projectRoot }));
+const ghUrl = toHttpsUrl(gitFacts.remote);
 const isGithub = /^https:\/\/github\.com\//.test(ghUrl);
 
 function hexToRgb(h) {
@@ -215,7 +243,7 @@ function getIssueNumbers() {
     const m = branch.match(/(?:^|[^a-z0-9])(\d{1,5})(?:[^a-z0-9]|$)/i);
     if (m) add(m[1]);
   }
-  const log = sh('git log -20 --format=%s', { cwd: projectRoot });
+  const log = gitFacts.log || '';
   const matches = log.match(/#(\d+)/g) || [];
   for (const m of matches) add(m.slice(1));
   return nums.slice(0, 3);

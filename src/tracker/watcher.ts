@@ -194,7 +194,7 @@ async function xiGenerate(text: string, outPath: string): Promise<void> {
     {
       method: "POST",
       headers: { "xi-api-key": XI_KEY, "content-type": "application/json" },
-      body: JSON.stringify({ text, model_id: "eleven_multilingual_v2" }),
+      body: JSON.stringify({ text, model_id: "eleven_flash_v2_5" }),
     },
   );
   if (!res.ok) throw new Error(`elevenlabs ${res.status}`);
