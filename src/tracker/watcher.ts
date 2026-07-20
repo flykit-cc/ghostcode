@@ -17,6 +17,7 @@ import {
 import { basename, dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { initialState, tick, type MachineState } from "./machine.ts";
+import { attributesKeypress } from "./presence.ts";
 import { appendEvent, debugLog, eventsPathFor, livePathFor, readTrackerConfig } from "./log.ts";
 
 const [sessionId, projectRoot, , parentPidRaw] = process.argv.slice(2);
@@ -276,6 +277,9 @@ void ensureAudioClips();
 // non-Ghostty samples before treating Ghostty as backgrounded, so a 1-tick
 // flicker can't re-arm the countdown (and replay its announcement).
 let prevFrontmost = true;
+// When Ghostty became frontmost — keypresses before this + a settle margin
+// belong to the app switch itself (Cmd+Tab), not to work in this window.
+let frontSince: number | null = Date.now();
 
 function shutdown(): void {
   if (done) return;
@@ -314,17 +318,21 @@ setInterval(() => {
     const now = Date.now();
     const front = frontmostIsGhostty();
     const frontmost = front || prevFrontmost;
+    // Track focus-gain so app-switch chords aren't mistaken for typing.
+    if (frontmost && frontSince === null) frontSince = now;
+    if (!frontmost) frontSince = null;
     prevFrontmost = front;
-    // Keypress attribution: a keypress belongs to THIS window only when, in
-    // the same poll window, (a) a key was genuinely pressed (keyboard-only
-    // idle ~0 — hover/scroll/swipe/focus events don't register there), (b)
-    // Ghostty is frontmost, and (c) this window's tty consumed input bytes.
-    // Mouse/focus bytes fail (a); typing in another window fails (c). Known
-    // leak: typing in window A while simultaneously hovering window B.
-    const kbIdle = keyboardIdleSec();
-    const ttyIdle = ttyIdleSecOrNull();
-    if (kbIdle <= 2.5 && front && (ttyIdle === null || ttyIdle <= 3)) {
-      lastLocalInputAt = now - kbIdle * 1000;
+    // Did the user just type into THIS window? See presence.ts.
+    if (
+      attributesKeypress({
+        now,
+        front: frontmost,
+        frontSince,
+        kbIdleSec: keyboardIdleSec(),
+        ttyIdleSec: ttyIdleSecOrNull(),
+      })
+    ) {
+      lastLocalInputAt = now;
     }
     const sinceLocalSec = (now - lastLocalInputAt) / 1000;
     // Fresh 3-minute window from the moment the agent stopped, even if the

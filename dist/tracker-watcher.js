@@ -72,6 +72,21 @@ function tick(s, p, cfg) {
   };
 }
 
+// src/tracker/presence.ts
+var KEYPRESS_FRESH_SEC = 2.5;
+var TTY_FRESH_SEC = 3;
+var FOCUS_SETTLE_MS = 750;
+function attributesKeypress(p) {
+  if (!p.front || p.frontSince === null)
+    return false;
+  if (!(p.kbIdleSec <= KEYPRESS_FRESH_SEC))
+    return false;
+  if (p.ttyIdleSec !== null && p.ttyIdleSec > TTY_FRESH_SEC)
+    return false;
+  const keypressAt = p.now - p.kbIdleSec * 1000;
+  return keypressAt >= p.frontSince + FOCUS_SETTLE_MS;
+}
+
 // src/tracker/log.ts
 import {
   appendFileSync,
@@ -342,6 +357,7 @@ var state = initialState();
 var done = false;
 ensureAudioClips();
 var prevFrontmost = true;
+var frontSince = Date.now();
 function shutdown() {
   if (done)
     return;
@@ -378,11 +394,19 @@ setInterval(() => {
     const now = Date.now();
     const front = frontmostIsGhostty();
     const frontmost = front || prevFrontmost;
+    if (frontmost && frontSince === null)
+      frontSince = now;
+    if (!frontmost)
+      frontSince = null;
     prevFrontmost = front;
-    const kbIdle = keyboardIdleSec();
-    const ttyIdle = ttyIdleSecOrNull();
-    if (kbIdle <= 2.5 && front && (ttyIdle === null || ttyIdle <= 3)) {
-      lastLocalInputAt = now - kbIdle * 1000;
+    if (attributesKeypress({
+      now,
+      front: frontmost,
+      frontSince,
+      kbIdleSec: keyboardIdleSec(),
+      ttyIdleSec: ttyIdleSecOrNull()
+    })) {
+      lastLocalInputAt = now;
     }
     const sinceLocalSec = (now - lastLocalInputAt) / 1000;
     const sinceStopSec = agentStoppedAt ? (now - agentStoppedAt) / 1000 : Infinity;
