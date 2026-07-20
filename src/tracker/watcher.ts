@@ -42,6 +42,10 @@ try {
 }
 
 let agentWorking = false;
+// When the agent stops, the user's attention decision starts THEN — not at
+// their last keystroke (which may be many minutes old after a long agent
+// run). Idle is measured from whichever is more recent.
+let agentStoppedAt = 0;
 let eventsOffset = -1; // -1 = read whole file on first pass
 let eventsDay = "";
 
@@ -69,7 +73,10 @@ function pollEvents(): void {
         const e = JSON.parse(line);
         if (e.session_id !== sessionId) continue;
         if (e.event === "prompt") agentWorking = true;
-        if (e.event === "stop") agentWorking = false;
+        if (e.event === "stop") {
+          agentWorking = false;
+          agentStoppedAt = Date.now();
+        }
         if (e.event === "session_end") shutdown();
       } catch {}
     }
@@ -146,6 +153,12 @@ function chime(): void {
 let state: MachineState = initialState();
 let done = false;
 
+// Space-switch animations make `lsappinfo front` report another app for a
+// single poll even though the user never left. Require TWO consecutive
+// non-Ghostty samples before treating Ghostty as backgrounded, so a 1-tick
+// flicker can't re-arm the countdown (and replay its announcement).
+let prevFrontmost = true;
+
 function shutdown(): void {
   if (done) return;
   done = true;
@@ -180,13 +193,20 @@ setInterval(() => {
       }
     }
     pollEvents();
+    const now = Date.now();
+    const front = frontmostIsGhostty();
+    const frontmost = front || prevFrontmost;
+    prevFrontmost = front;
+    // Fresh 3-minute window from the moment the agent stopped, even if the
+    // last real keystroke is older (long agent runs need no typing).
+    const sinceStopSec = agentStoppedAt ? (now - agentStoppedAt) / 1000 : Infinity;
     const r = tick(
       state,
       {
-        now: Date.now(),
+        now,
         agentWorking,
-        frontmost: frontmostIsGhostty(),
-        inputIdleSec: inputIdleSec(),
+        frontmost,
+        inputIdleSec: Math.min(inputIdleSec(), sinceStopSec),
       },
       cfg,
     );

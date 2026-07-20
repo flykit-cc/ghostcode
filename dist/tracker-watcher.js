@@ -140,6 +140,7 @@ try {
   debugLog(`watcher init: ${e}`);
 }
 var agentWorking = false;
+var agentStoppedAt = 0;
 var eventsOffset = -1;
 var eventsDay = "";
 function pollEvents() {
@@ -172,8 +173,10 @@ function pollEvents() {
           continue;
         if (e.event === "prompt")
           agentWorking = true;
-        if (e.event === "stop")
+        if (e.event === "stop") {
           agentWorking = false;
+          agentStoppedAt = Date.now();
+        }
         if (e.event === "session_end")
           shutdown();
       } catch {}
@@ -238,6 +241,7 @@ function chime() {
 }
 var state = initialState();
 var done = false;
+var prevFrontmost = true;
 function shutdown() {
   if (done)
     return;
@@ -271,11 +275,16 @@ setInterval(() => {
       }
     }
     pollEvents();
+    const now = Date.now();
+    const front = frontmostIsGhostty();
+    const frontmost = front || prevFrontmost;
+    prevFrontmost = front;
+    const sinceStopSec = agentStoppedAt ? (now - agentStoppedAt) / 1000 : Infinity;
     const r = tick(state, {
-      now: Date.now(),
+      now,
       agentWorking,
-      frontmost: frontmostIsGhostty(),
-      inputIdleSec: inputIdleSec()
+      frontmost,
+      inputIdleSec: Math.min(inputIdleSec(), sinceStopSec)
     }, cfg);
     state = r.state;
     if (r.effects.say)
