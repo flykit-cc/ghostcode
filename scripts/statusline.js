@@ -152,7 +152,7 @@ if (isClaude) {
 const totIn = ctxInfo.total_input_tokens || 0;
 const totOut = ctxInfo.total_output_tokens || 0;
 const rl = input.rate_limits || {};
-function limitSeg(label, o) {
+function limitSeg(o) {
   if (!o || o.used_percentage == null) return '';
   const p = Math.max(0, Math.min(100, Math.round(o.used_percentage)));
   const col =
@@ -174,9 +174,11 @@ function limitSeg(label, o) {
       reset = `\x1b[0m\x1b[2m ↻${rel}\x1b[0m`;
     }
   }
-  return `${col}${label} ${p}%${reset}\x1b[0m`;
+  return `${col}${p}%${reset}\x1b[0m`;
 }
-const limitParts = [limitSeg('5h', rl.five_hour), limitSeg('week', rl.seven_day)]
+// No window labels — the ↻ countdown magnitude (hours vs days) tells the
+// 5h window from the weekly one.
+const limitParts = [limitSeg(rl.five_hour), limitSeg(rl.seven_day)]
   .filter(Boolean)
   .join(' ');
 const limitsSeg = limitParts ? `\x1b[2mlimits\x1b[0m ${limitParts}` : '';
