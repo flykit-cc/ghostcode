@@ -46,6 +46,9 @@ let agentWorking = false;
 // their last keystroke (which may be many minutes old after a long agent
 // run). Idle is measured from whichever is more recent.
 let agentStoppedAt = 0;
+// Timestamp of the last keypress ATTRIBUTED TO THIS WINDOW (see tick loop).
+// Seeded with session start — a human just launched it.
+let lastLocalInputAt = Date.now();
 let eventsOffset = -1; // -1 = read whole file on first pass
 let eventsDay = "";
 
@@ -72,7 +75,11 @@ function pollEvents(): void {
       try {
         const e = JSON.parse(line);
         if (e.session_id !== sessionId) continue;
-        if (e.event === "prompt") agentWorking = true;
+        if (e.event === "prompt") {
+          agentWorking = true;
+          // A submitted prompt is definitive typing into THIS session.
+          lastLocalInputAt = Date.now();
+        }
         if (e.event === "stop") {
           agentWorking = false;
           agentStoppedAt = Date.now();
@@ -112,54 +119,41 @@ try {
   if (tty && tty !== "??") ttyPath = `/dev/${tty}`;
 } catch {}
 
-// Seconds since the last real KEYBOARD press, machine-wide. The tty atime
-// alone isn't enough: CC enables terminal mouse reporting, so hovering or
-// scrolling over a window feeds bytes into its tty and refreshes the atime
-// with zero typing. CGEventSourceSecondsSinceLastEventType(1, kCGEventKeyDown)
-// counts key presses only.
+// Seconds since the last real KEYBOARD press, machine-wide.
+// CGEventSourceSecondsSinceLastEventType(1, kCGEventKeyDown=10) counts key
+// presses only — mouse moves, scrolls, and swipes don't register. On an
+// osascript hiccup we extrapolate from the last good reading: idle can only
+// have grown unless a key was pressed, and missing one tick of typing is
+// better than un-pausing on a phantom zero.
+let kbLast: { idle: number; at: number } | null = null;
 function keyboardIdleSec(): number {
+  const now = Date.now();
   try {
     const out = execFileSync(
       "osascript",
       ["-l", "JavaScript", "-e",
         "ObjC.import('CoreGraphics'); $.CGEventSourceSecondsSinceLastEventType(1, 10)"],
-      { timeout: 1500 },
+      { timeout: 3000 },
     )
       .toString()
       .trim();
     const n = Number(out);
-    return Number.isFinite(n) ? n : 0;
-  } catch {
-    return 0; // conservative: never force idle on API failure
-  }
+    if (Number.isFinite(n)) {
+      kbLast = { idle: n, at: now };
+      return n;
+    }
+  } catch {}
+  if (kbLast) return kbLast.idle + (now - kbLast.at) / 1000;
+  return Infinity; // no reading yet — treat as not typing
 }
 
-function inputIdleSec(): number {
-  // Presence needs BOTH: input arrived in THIS window's tty (per-window
-  // signal, but mouse-polluted) AND an actual key was pressed around then
-  // (keyboard-only, but machine-wide). Taking the max of the two idle times
-  // means hover-only can't wake this window, and typing elsewhere can't
-  // either. (Typing in window A while hovering window B still slips through
-  // — rare enough to ignore.)
-  if (ttyPath) {
-    try {
-      const atime = statSync(ttyPath).atimeMs;
-      const ttyIdle = Math.max(0, (Date.now() - atime) / 1000);
-      return Math.max(ttyIdle, keyboardIdleSec());
-    } catch {
-      ttyPath = null; // tty vanished — use the global fallback from now on
-    }
-  }
+function ttyIdleSecOrNull(): number | null {
+  if (!ttyPath) return null;
   try {
-    const out = execSync(
-      "ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000); exit}'",
-      { timeout: 1000, shell: "/bin/sh" },
-    )
-      .toString()
-      .trim();
-    return Number(out) || 0;
+    return Math.max(0, (Date.now() - statSync(ttyPath).atimeMs) / 1000);
   } catch {
-    return 0;
+    ttyPath = null; // tty vanished
+    return null;
   }
 }
 
@@ -226,6 +220,18 @@ setInterval(() => {
     const front = frontmostIsGhostty();
     const frontmost = front || prevFrontmost;
     prevFrontmost = front;
+    // Keypress attribution: a keypress belongs to THIS window only when, in
+    // the same poll window, (a) a key was genuinely pressed (keyboard-only
+    // idle ~0 — hover/scroll/swipe/focus events don't register there), (b)
+    // Ghostty is frontmost, and (c) this window's tty consumed input bytes.
+    // Mouse/focus bytes fail (a); typing in another window fails (c). Known
+    // leak: typing in window A while simultaneously hovering window B.
+    const kbIdle = keyboardIdleSec();
+    const ttyIdle = ttyIdleSecOrNull();
+    if (kbIdle <= 2.5 && front && (ttyIdle === null || ttyIdle <= 3)) {
+      lastLocalInputAt = now - kbIdle * 1000;
+    }
+    const sinceLocalSec = (now - lastLocalInputAt) / 1000;
     // Fresh 3-minute window from the moment the agent stopped, even if the
     // last real keystroke is older (long agent runs need no typing).
     const sinceStopSec = agentStoppedAt ? (now - agentStoppedAt) / 1000 : Infinity;
@@ -235,7 +241,7 @@ setInterval(() => {
         now,
         agentWorking,
         frontmost,
-        inputIdleSec: Math.min(inputIdleSec(), sinceStopSec),
+        inputIdleSec: Math.min(sinceLocalSec, sinceStopSec),
       },
       cfg,
     );

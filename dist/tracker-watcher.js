@@ -141,6 +141,7 @@ try {
 }
 var agentWorking = false;
 var agentStoppedAt = 0;
+var lastLocalInputAt = Date.now();
 var eventsOffset = -1;
 var eventsDay = "";
 function pollEvents() {
@@ -171,8 +172,10 @@ function pollEvents() {
         const e = JSON.parse(line);
         if (e.session_id !== sessionId)
           continue;
-        if (e.event === "prompt")
+        if (e.event === "prompt") {
           agentWorking = true;
+          lastLocalInputAt = Date.now();
+        }
         if (e.event === "stop") {
           agentWorking = false;
           agentStoppedAt = Date.now();
@@ -206,35 +209,34 @@ try {
   if (tty && tty !== "??")
     ttyPath = `/dev/${tty}`;
 } catch {}
+var kbLast = null;
 function keyboardIdleSec() {
+  const now = Date.now();
   try {
     const out = execFileSync("osascript", [
       "-l",
       "JavaScript",
       "-e",
       "ObjC.import('CoreGraphics'); $.CGEventSourceSecondsSinceLastEventType(1, 10)"
-    ], { timeout: 1500 }).toString().trim();
+    ], { timeout: 3000 }).toString().trim();
     const n = Number(out);
-    return Number.isFinite(n) ? n : 0;
-  } catch {
-    return 0;
-  }
-}
-function inputIdleSec() {
-  if (ttyPath) {
-    try {
-      const atime = statSync2(ttyPath).atimeMs;
-      const ttyIdle = Math.max(0, (Date.now() - atime) / 1000);
-      return Math.max(ttyIdle, keyboardIdleSec());
-    } catch {
-      ttyPath = null;
+    if (Number.isFinite(n)) {
+      kbLast = { idle: n, at: now };
+      return n;
     }
-  }
+  } catch {}
+  if (kbLast)
+    return kbLast.idle + (now - kbLast.at) / 1000;
+  return Infinity;
+}
+function ttyIdleSecOrNull() {
+  if (!ttyPath)
+    return null;
   try {
-    const out = execSync("ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000); exit}'", { timeout: 1000, shell: "/bin/sh" }).toString().trim();
-    return Number(out) || 0;
+    return Math.max(0, (Date.now() - statSync2(ttyPath).atimeMs) / 1000);
   } catch {
-    return 0;
+    ttyPath = null;
+    return null;
   }
 }
 function say(text) {
@@ -294,12 +296,18 @@ setInterval(() => {
     const front = frontmostIsGhostty();
     const frontmost = front || prevFrontmost;
     prevFrontmost = front;
+    const kbIdle = keyboardIdleSec();
+    const ttyIdle = ttyIdleSecOrNull();
+    if (kbIdle <= 2.5 && front && (ttyIdle === null || ttyIdle <= 3)) {
+      lastLocalInputAt = now - kbIdle * 1000;
+    }
+    const sinceLocalSec = (now - lastLocalInputAt) / 1000;
     const sinceStopSec = agentStoppedAt ? (now - agentStoppedAt) / 1000 : Infinity;
     const r = tick(state, {
       now,
       agentWorking,
       frontmost,
-      inputIdleSec: Math.min(inputIdleSec(), sinceStopSec)
+      inputIdleSec: Math.min(sinceLocalSec, sinceStopSec)
     }, cfg);
     state = r.state;
     if (r.effects.say)
