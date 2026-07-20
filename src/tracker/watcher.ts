@@ -112,11 +112,40 @@ try {
   if (tty && tty !== "??") ttyPath = `/dev/${tty}`;
 } catch {}
 
+// Seconds since the last real KEYBOARD press, machine-wide. The tty atime
+// alone isn't enough: CC enables terminal mouse reporting, so hovering or
+// scrolling over a window feeds bytes into its tty and refreshes the atime
+// with zero typing. CGEventSourceSecondsSinceLastEventType(1, kCGEventKeyDown)
+// counts key presses only.
+function keyboardIdleSec(): number {
+  try {
+    const out = execFileSync(
+      "osascript",
+      ["-l", "JavaScript", "-e",
+        "ObjC.import('CoreGraphics'); $.CGEventSourceSecondsSinceLastEventType(1, 10)"],
+      { timeout: 1500 },
+    )
+      .toString()
+      .trim();
+    const n = Number(out);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0; // conservative: never force idle on API failure
+  }
+}
+
 function inputIdleSec(): number {
+  // Presence needs BOTH: input arrived in THIS window's tty (per-window
+  // signal, but mouse-polluted) AND an actual key was pressed around then
+  // (keyboard-only, but machine-wide). Taking the max of the two idle times
+  // means hover-only can't wake this window, and typing elsewhere can't
+  // either. (Typing in window A while hovering window B still slips through
+  // — rare enough to ignore.)
   if (ttyPath) {
     try {
       const atime = statSync(ttyPath).atimeMs;
-      return Math.max(0, (Date.now() - atime) / 1000);
+      const ttyIdle = Math.max(0, (Date.now() - atime) / 1000);
+      return Math.max(ttyIdle, keyboardIdleSec());
     } catch {
       ttyPath = null; // tty vanished — use the global fallback from now on
     }

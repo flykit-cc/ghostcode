@@ -206,11 +206,26 @@ try {
   if (tty && tty !== "??")
     ttyPath = `/dev/${tty}`;
 } catch {}
+function keyboardIdleSec() {
+  try {
+    const out = execFileSync("osascript", [
+      "-l",
+      "JavaScript",
+      "-e",
+      "ObjC.import('CoreGraphics'); $.CGEventSourceSecondsSinceLastEventType(1, 10)"
+    ], { timeout: 1500 }).toString().trim();
+    const n = Number(out);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
 function inputIdleSec() {
   if (ttyPath) {
     try {
       const atime = statSync2(ttyPath).atimeMs;
-      return Math.max(0, (Date.now() - atime) / 1000);
+      const ttyIdle = Math.max(0, (Date.now() - atime) / 1000);
+      return Math.max(ttyIdle, keyboardIdleSec());
     } catch {
       ttyPath = null;
     }
