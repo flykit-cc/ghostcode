@@ -91,7 +91,29 @@ function frontmostIsGhostty(): boolean {
   }
 }
 
+// Per-session input idle: the kernel bumps a tty's atime on every keystroke
+// typed into THAT terminal (same mechanism `w` uses), so with several Ghostty
+// windows open, typing in one doesn't mark the others as attended. Falls back
+// to the machine-wide HID idle timer when the CC process has no tty.
+let ttyPath: string | null = null;
+try {
+  const tty = execFileSync("ps", ["-o", "tty=", "-p", String(parentPid)], {
+    timeout: 1000,
+  })
+    .toString()
+    .trim();
+  if (tty && tty !== "??") ttyPath = `/dev/${tty}`;
+} catch {}
+
 function inputIdleSec(): number {
+  if (ttyPath) {
+    try {
+      const atime = statSync(ttyPath).atimeMs;
+      return Math.max(0, (Date.now() - atime) / 1000);
+    } catch {
+      ttyPath = null; // tty vanished — use the global fallback from now on
+    }
+  }
   try {
     const out = execSync(
       "ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000); exit}'",

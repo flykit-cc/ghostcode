@@ -195,7 +195,23 @@ function frontmostIsGhostty() {
     return false;
   }
 }
+var ttyPath = null;
+try {
+  const tty = execFileSync("ps", ["-o", "tty=", "-p", String(parentPid)], {
+    timeout: 1000
+  }).toString().trim();
+  if (tty && tty !== "??")
+    ttyPath = `/dev/${tty}`;
+} catch {}
 function inputIdleSec() {
+  if (ttyPath) {
+    try {
+      const atime = statSync2(ttyPath).atimeMs;
+      return Math.max(0, (Date.now() - atime) / 1000);
+    } catch {
+      ttyPath = null;
+    }
+  }
   try {
     const out = execSync("ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000); exit}'", { timeout: 1000, shell: "/bin/sh" }).toString().trim();
     return Number(out) || 0;
